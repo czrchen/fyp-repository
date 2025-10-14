@@ -20,7 +20,7 @@ type Message = {
   sender: "me" | "other";
   text: string;
   time: string;
-  date: string; // 🆕 Added field
+  date?: string; // 🆕 Added field
 };
 
 export default function MessagesPage() {
@@ -49,7 +49,7 @@ export default function MessagesPage() {
           sender: "other",
           text: `Hello! I'm the chatbot for ${selectedSeller.sellerId}. How can I help you?`,
           time: "10:30 AM",
-          date: new Date().toLocaleDateString(), // ✅ added
+          date: new Date().toLocaleDateString(),
         },
       ]);
     }
