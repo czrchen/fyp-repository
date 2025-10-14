@@ -49,6 +49,7 @@ export default function MessagesPage() {
           sender: "other",
           text: `Hello! I'm the chatbot for ${selectedSeller.sellerId}. How can I help you?`,
           time: "10:30 AM",
+          date: new Date().toLocaleDateString(), // ✅ added
         },
       ]);
     }
