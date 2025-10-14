@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import stringSimilarity from "string-similarity";
 
@@ -8,9 +8,9 @@ type FAQ = { question: string; answer: string };
 
 export async function POST(
     req: Request,
-    context: { params: { sellerId: string } }
+    context: { params: Promise<{ sellerId: string }> }  // ✅ updated type
 ) {
-    const { sellerId } = context.params;
+    const { sellerId } = await context.params; // ✅ must await now
     const { question } = (await req.json()) as { question: string };
 
     if (!question) {
