@@ -1,0 +1,17 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SellerChatbot {
+  id              Int      @id @default(autoincrement())
+  sellerId        String   @unique
+  faqs            Json
+  storeDescription String? // 🆕 optional text field
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
