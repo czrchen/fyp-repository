@@ -1,28 +1,35 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";   // ✅ make sure this import exists
+import prisma from "@/lib/prisma";         // ✅ your prisma client
 
-interface FAQ {
-    question: string;
-    answer: string;
-}
+export async function POST(req: NextRequest) {
+    try {
+        const body = await req.json();
+        const { sellerId, faqs, storeDescription } = body;
 
-export async function POST(req: Request) {
-    const body = await req.json();
-    const { sellerId, faqs, storeDescription } = body as {
-        sellerId: string;
-        faqs: FAQ[];
-        storeDescription?: string;
-    };
+        if (!sellerId) {
+            return NextResponse.json({ error: "Missing sellerId" }, { status: 400 });
+        }
 
-    if (!sellerId) {
-        return NextResponse.json({ error: "Missing sellerId" }, { status: 400 });
+        await prisma.sellerChatbot.upsert({
+            where: { sellerId },
+            update: {
+                faqs: faqs as unknown as Prisma.InputJsonValue, // ✅ final safe cast
+                storeDescription,
+            },
+            create: {
+                sellerId,
+                faqs: faqs as unknown as Prisma.InputJsonValue, // ✅ final safe cast
+                storeDescription,
+            },
+        });
+
+        return NextResponse.json({ message: "Chatbot and store info saved." });
+    } catch (error) {
+        console.error("Error saving chatbot:", error);
+        return NextResponse.json(
+            { error: "Internal server error" },
+            { status: 500 }
+        );
     }
-
-    await prisma.sellerChatbot.upsert({
-        where: { sellerId },
-        update: { faqs, storeDescription },
-        create: { sellerId, faqs, storeDescription },
-    });
-
-    return NextResponse.json({ message: "Chatbot and store info saved." });
 }
