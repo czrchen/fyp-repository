@@ -19,11 +19,6 @@ export async function POST(req: Request) {
             );
         }
 
-        console.log("sessionId:", sessionId);
-        console.log("senderType:", senderType);
-        console.log("content:", content);
-        console.log("isChatbot value received:", isChatbot);
-
         // 🧠 Determine chatbot flag safely
         const chatbotFlag = isChatbot === null ? false : isChatbot;
         const isRead = chatbotFlag ? true : false; // ✅ chatbot messages are always read

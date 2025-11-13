@@ -3,12 +3,12 @@ import prisma from "@/lib/prisma";
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { sessionId: string } }
+    { params }: { params: Promise<{ sessionId: string }> }
 ) {
-    const { sessionId } = params;
-    console.log("Session Id", sessionId);
-
     try {
+        const { sessionId } = await params;
+        console.log("Session Id", sessionId);
+
         const { userType } = await req.json(); // 👈 receive from client ("buyer" or "seller")
 
         if (!userType || !["buyer", "seller"].includes(userType)) {

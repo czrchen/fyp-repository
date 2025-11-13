@@ -3,18 +3,20 @@ import prisma from "@/lib/prisma";
 
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        // Await params first
+        const { id } = await params;
         const data = await req.json();
 
         // Validate
-        if (!params.id) {
+        if (!id) {
             return NextResponse.json({ error: "Missing address ID" }, { status: 400 });
         }
 
         const updated = await prisma.address.update({
-            where: { id: Number(params.id) },
+            where: { id: Number(id) },
             data: {
                 label: data.label ?? null,
                 street: data.street,

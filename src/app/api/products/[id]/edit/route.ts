@@ -3,9 +3,10 @@ import prisma from "@/lib/prisma";
 
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const body = await req.json();
         const { variants, ...productData } = body;
 
@@ -13,7 +14,7 @@ export async function PATCH(
         if (Array.isArray(variants) && variants.length > 0) {
             // Update the main product info
             await prisma.product.update({
-                where: { id: params.id },
+                where: { id },
                 data: {
                     name: productData.name,
                     description: productData.description || "",
@@ -26,13 +27,13 @@ export async function PATCH(
             // 🧠 Sync all variants (simplified full replace approach)
             // Delete old variants, then recreate from the new array
             await prisma.productVariant.deleteMany({
-                where: { productId: params.id },
+                where: { productId: id },
             });
 
             await prisma.productVariant.createMany({
                 data: variants.map((v: any) => ({
                     id: v.id || crypto.randomUUID(),
-                    productId: params.id,
+                    productId: id,
                     name: v.name || "Untitled Variant",
                     price: v.price ?? 0,
                     stock: v.stock ?? 0,
@@ -53,7 +54,7 @@ export async function PATCH(
             productData;
 
         const updatedProduct = await prisma.product.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 name,
                 description,
