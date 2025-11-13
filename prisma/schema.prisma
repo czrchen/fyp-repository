@@ -7,11 +7,287 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                String          @id @default(uuid())
+  full_name         String
+  email             String          @unique
+  gender            String?
+  location          String?
+  income_level      String?
+  interests         String[]
+  avatar_url        String?
+  created_at        DateTime        @default(now())
+  updated_at        DateTime        @updatedAt
+  profile_completed Boolean         @default(false)
+  isGoogleSignIn    Boolean         @default(false)
+  isSeller          Boolean         @default(false)
+  password          String?
+  phone             String?
+  dob               String?
+  addresses         Address[]
+  cartItems         CartItem[]
+  buyerChats        ChatSession[]   @relation("BuyerSessions")
+  eventLogs         EventLog[]
+  orders            Order[]
+  searchHistories   SearchHistory[]
+  sellerProfile     Seller?         @relation("UserSeller")
+
+  @@map("users")
+}
+
+model Seller {
+  id                String             @id @default(uuid())
+  userId            String             @unique
+  store_name        String
+  store_description String?
+  store_logo        String?
+  rating            Float?             @default(0)
+  total_sales       Int?               @default(0)
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+  cartItems         CartItem[]
+  sellerChats       ChatSession[]      @relation("SellerSessions")
+  orderItems        OrderItem[]
+  products          Product[]
+  user              User               @relation("UserSeller", fields: [userId], references: [id], onDelete: Cascade)
+  sellerChatbot     SellerChatbot?
+  performance       SellerPerformance?
+}
+
 model SellerChatbot {
-  id              Int      @id @default(autoincrement())
-  sellerId        String   @unique
-  faqs            Json
-  storeDescription String? // 🆕 optional text field
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  faqs             Json
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  storeDescription String?
+  sellerId         String   @unique
+  seller           Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+}
+
+model Category {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  parentId     String?
+  parent       Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     Category[] @relation("CategoryHierarchy")
+  eventLogs    EventLog[]
+  mainProducts Product[]  @relation("MainCategory")
+  subProducts  Product[]  @relation("SubCategory")
+}
+
+model Product {
+  id            String            @id @default(uuid())
+  sellerId      String
+  name          String
+  description   String?
+  price         Float
+  stock         Int               @default(0)
+  tags          String[]
+  imageUrl      String?
+  galleryUrls   String[]
+  attributes    Json              @default("{}")
+  ratingAvg     Float             @default(0)
+  ratingCount   Int               @default(0)
+  viewCount     Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  categoryId    String
+  subcategoryId String?
+  status        Boolean           @default(true)
+  brandId       String?
+  cartItems     CartItem[]
+  eventLogs     EventLog[]
+  orderItems    OrderItem[]
+  brands        Brand?            @relation(fields: [brandId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  category      Category          @relation("MainCategory", fields: [categoryId], references: [id])
+  seller        Seller            @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  subcategory   Category?         @relation("SubCategory", fields: [subcategoryId], references: [id])
+  analytcis     ProductAnalytics?
+  variants      ProductVariant[]
+}
+
+model ProductVariant {
+  id         String            @id @default(uuid())
+  productId  String
+  stock      Int               @default(0)
+  price      Float?
+  sku        String?
+  imageUrl   String?
+  attributes Json              @default("{}")
+  name       String
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  product    Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  analytcis  VariantAnalytics?
+}
+
+model Address {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  label     String?
+  street    String
+  city      String
+  state     String
+  postcode  String?
+  createdAt DateTime @default(now())
+  country   String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders    Order[]
+}
+
+model ChatSession {
+  id        String        @id @default(uuid())
+  buyerId   String
+  sellerId  String
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  messages  ChatMessage[]
+  buyer     User          @relation("BuyerSessions", fields: [buyerId], references: [id], onDelete: Cascade)
+  seller    Seller        @relation("SellerSessions", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([buyerId, sellerId])
+}
+
+model ChatMessage {
+  id            String      @id @default(uuid())
+  sessionId     String
+  senderType    String
+  senderId      String
+  content       String
+  isRead        Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  attachmentUrl String?
+  isChatbot     Boolean     @default(false)
+  session       ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model SellerPerformance {
+  id           Int      @id @default(autoincrement())
+  sellerId     String   @unique
+  totalSales   Int      @default(0)
+  totalRevenue Float    @default(0)
+  totalViews   Int      @default(0)
+  ratingAvg    Float?   @default(0)
+  ratingCount Int @default(0)
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  seller       Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+}
+
+model ProductAnalytics {
+  id         Int      @id @default(autoincrement())
+  productId  String   @unique
+  views      Int      @default(0)
+  salesCount Int      @default(0)
+  ratingAvg  Float?   @default(0)
+  ratingCount Int @default(0)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model VariantAnalytics {
+  id         Int            @id @default(autoincrement())
+  variantId  String         @unique
+  salesCount Int            @default(0)
+  ratingAvg  Float?         @default(0)
+  ratingCount Int @default(0)
+  updatedAt  DateTime       @updatedAt
+  createdAt  DateTime       @default(now())
+  variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+}
+
+model CartItem {
+  id         String          @id @default(uuid())
+  userId     String
+  productId  String
+  sellerId   String?
+  quantity   Int             @default(1)
+  updatedAt  DateTime        @updatedAt
+  createdAt  DateTime        @default(now())
+  image      String?
+  price      Float
+  sellerName String?
+  variantId  String?
+  attributes Json?
+  product    Product         @relation(fields: [productId], references: [id])
+  seller     Seller?         @relation(fields: [sellerId], references: [id])
+  user       User            @relation(fields: [userId], references: [id])
+  variant    ProductVariant? @relation(fields: [variantId], references: [id])
+}
+
+model SearchHistory {
+  id        String   @id @default(uuid())
+  userId    String
+  keyword   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  userId        String
+  addressId     Int?
+  totalAmount   Float
+  paymentMethod String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  address       Address?    @relation(fields: [addressId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id            String          @id @default(uuid())
+  orderId       String
+  productId     String
+  variantId     String?
+  sellerId      String
+  quantity      Int
+  price         Float
+  subtotal      Float
+  status        String          @default("Pending")
+  estimatedDays Int?
+  deliveredAt   DateTime?
+  receivedAt    DateTime?
+  imageUrl      String?
+  rating        Int?            @default(0)
+  feedback      String?
+  attributes    Json?
+  
+  order         Order           @relation(fields: [orderId], references: [id])
+  product       Product         @relation(fields: [productId], references: [id])
+  seller        Seller          @relation(fields: [sellerId], references: [id])
+  variant       ProductVariant? @relation(fields: [variantId], references: [id])
+}
+
+model Brand {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  eventLogs EventLog[]
+  Product   Product[]
+
+  @@map("brands")
+}
+
+model EventLog {
+  id           String    @id @default(uuid())
+  event_time   DateTime
+  event_type   String
+  product_id   String
+  category_id  String?
+  brandId      String?
+  price        Float?
+  user_id      String
+  user_session String
+  brand        Brand?    @relation(fields: [brandId], references: [id])
+  category     Category? @relation(fields: [category_id], references: [id])
+  product      Product   @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
 }

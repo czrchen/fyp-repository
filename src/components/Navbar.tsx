@@ -1,18 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { Search, ShoppingCart, User, MessageCircle, Store } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  User,
+  MessageCircle,
+  Store,
+  LogOut,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import SearchBar from "@/components/SearchBar";
 import { useCart } from "../contexts/CartContext";
+import { useSession, signOut } from "next-auth/react"; // ✅ use NextAuth session
+import { useProfile } from "@/contexts/ProfileContext"; // ✅ add this
 
 const Navbar = () => {
   const { totalItems } = useCart();
+  const { data: session, status } = useSession(); // ✅ NextAuth session
+
+  const users = session?.user;
+  const { user } = useProfile(); // ✅ get full user info (includes isSeller)
 
   return (
     <nav className="sticky top-0 z-50 bg-card border-b border-border shadow-md">
-      <div className="container mx-auto px-4 md:px-14">
+      <div className="container mx-auto px-4 md:px-18">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
@@ -22,14 +36,7 @@ const Navbar = () => {
 
           {/* Search Bar */}
           <div className="hidden md:flex flex-1 max-w-2xl mx-8">
-            <div className="relative w-full flex items-center">
-              <Search className="absolute left-3 h-5 w-5 text-gray-500 pointer-events-none" />
-              <Input
-                type="search"
-                placeholder="Search for products..."
-                className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 bg-gray-50 text-gray-800 focus-visible:ring-2 focus-visible:ring-blue-500"
-              />
-            </div>
+            <SearchBar />
           </div>
 
           {/* Actions */}
@@ -51,22 +58,51 @@ const Navbar = () => {
               </Button>
             </Link>
 
-            <Link href="/auth">
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-              </Button>
-            </Link>
+            {/* 👤 User Icon / Profile / Logout */}
+            {users ? (
+              <>
+                <Link href="/profile">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title={users.name ?? "Profile"}
+                  >
+                    <User className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  title="Logout"
+                  onClick={() => {
+                    localStorage.removeItem("sessionId");
 
-            <Link href="/seller">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="bg-black text-white font-medium hover:bg-gray-800 hover:scale-105 
-             transition-all duration-300 ease-in-out cursor-pointer"
-              >
-                Seller Hub
-              </Button>
-            </Link>
+                    signOut({ callbackUrl: "/auth" });
+                  }}
+                >
+                  <LogOut className="h-5 w-5 text-red-600" />
+                </Button>
+              </>
+            ) : (
+              <Link href="/auth">
+                <Button variant="ghost" size="icon" title="Login">
+                  <User className="h-5 w-5" />
+                </Button>
+              </Link>
+            )}
+
+            {/* ✅ Only show if user is a seller */}
+            {user?.isSeller && (
+              <Link href="/seller">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="bg-black text-white font-medium hover:bg-gray-800 hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer"
+                >
+                  Seller Hub
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 

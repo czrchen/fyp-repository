@@ -1,6 +1,10 @@
 import "./globals.css";
-import { CartProvider } from "@/contexts/CartContext";
-import ChatbotWidget from "@/components/ChatbotWidget";
+import AppProviders from "@/providers/AppProviders"; // ✅ import the client wrapper
+
+export const metadata = {
+  title: "ShopHub",
+  description: "AI-driven e-commerce platform",
+};
 
 export default function RootLayout({
   children,
@@ -10,8 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <CartProvider>{children}</CartProvider>
-        <ChatbotWidget />
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

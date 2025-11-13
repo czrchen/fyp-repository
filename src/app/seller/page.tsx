@@ -1,6 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSeller } from "@/contexts/SellerContext"; // ✅ import the context
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,50 +28,109 @@ import {
   Settings,
   Plus,
   BarChart3,
+  Star,
+  ShoppingCart,
 } from "lucide-react";
+import ProductCard from "@/components/ProductCard";
 
 export default function SellerDashboard() {
-  const stats = [
+  const {
+    sellerId,
+    storeName,
+    storeLogo,
+    storeDescription,
+    stats,
+    products,
+    isLoading,
+    refetchSellerData: fetchSellerData,
+  } = useSeller();
+  const [localProducts, setLocalProducts] = useState(products);
+
+  useEffect(() => {
+    setLocalProducts(products);
+  }, [products]);
+
+  if (isLoading)
+    return (
+      <div className="flex h-screen items-center justify-center text-muted-foreground">
+        Loading seller dashboard...
+      </div>
+    );
+
+  const formattedStats = [
     {
       label: "Total Sales",
-      value: "$12,345",
-      icon: DollarSign,
-      change: "+12.5%",
+      value: `${stats?.totalSales.toLocaleString() ?? "0"}`,
+      icon: ShoppingCart,
     },
-    { label: "Products", value: "48", icon: Package, change: "+3" },
-    { label: "Total Views", value: "34.5K", icon: Eye, change: "+8.2%" },
-    { label: "Active Chats", value: "23", icon: MessageCircle, change: "+5" },
+    {
+      label: "Total Views",
+      value: `${(stats?.totalViews ?? 0).toLocaleString()}`,
+      icon: Eye,
+    },
+    {
+      label: "Revenue",
+      value: `$${(stats?.totalRevenue?.toFixed(2) ?? 0).toLocaleString()}`,
+      icon: TrendingUp,
+    },
+    {
+      label: "Average Rating",
+      value: `${stats?.ratingAvg?.toFixed(2) ?? 0}`,
+      icon: Star,
+    },
   ];
 
-  const recentProducts = [
-    {
-      id: 1,
-      name: "Wireless Headphones",
-      views: 1234,
-      sales: 45,
-      status: "active",
-    },
-    { id: 2, name: "Smart Watch", views: 856, sales: 32, status: "active" },
-    { id: 3, name: "Running Shoes", views: 2103, sales: 67, status: "active" },
-  ];
+  const handleImport = async () => {
+    try {
+      const res = await fetch("/api/importProduct", {
+        method: "POST",
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        console.log(`✅ Successfully imported ${data.inserted} products!`);
+      } else {
+        console.log(`❌ Failed: ${data.error || "Something went wrong"}`);
+      }
+    } catch (err) {
+      console.error(err);
+      console.log("⚠️ Import failed. Check console or API logs.");
+    } finally {
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       {/* ✅ Seller Navigation */}
       <nav className="bg-card border-b border-border">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-18">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
               <Store className="h-8 w-8 text-primary" />
               <div>
-                <h1 className="font-bold text-foreground">Seller Hub</h1>
-                <p className="text-xs text-muted-foreground">My Store</p>
+                <h1 className="font-bold text-foreground">
+                  {storeName || "My Store"}
+                </h1>
+                <p className="text-xs text-muted-foreground">Seller Hub</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <Link href="/" passHref>
                 <Button variant="ghost" size="sm">
                   View Storefront
+                </Button>
+              </Link>
+              <Button variant="ghost" size="sm" onClick={handleImport}>
+                handleImport
+              </Button>
+              <Link href="/" passHref>
+                <Button
+                  variant="secondary"
+                  className="bg-black text-white font-medium hover:bg-gray-800 hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer"
+                  size="sm"
+                >
+                  ShopHub
                 </Button>
               </Link>
               <Button variant="ghost" size="icon">
@@ -75,23 +142,46 @@ export default function SellerDashboard() {
       </nav>
 
       {/* ✅ Page Body */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-18 py-8">
         {/* Quick Actions */}
         <div className="mb-8 flex gap-3 flex-wrap">
-          <Link href="/seller/addProduct" passHref>
-            <Button size="lg">
-              <Plus className="mr-2 h-5 w-5" />
-              Add Product
-            </Button>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="lg" className="cursor-pointer">
+                <Plus className="mr-2 h-5 w-5" />
+                Add Product
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="end" className="w-56">
+              <Link href="/seller/addProduct?type=single" passHref>
+                <DropdownMenuItem className="cursor-pointer">
+                  ➕ Add Single Product
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/seller/addProduct?type=variant" passHref>
+                <DropdownMenuItem className="cursor-pointer">
+                  🧩 Add Product with Variants
+                </DropdownMenuItem>
+              </Link>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Link href="/seller/chatbot" passHref>
-            <Button variant="secondary" size="lg">
+            <Button variant="secondary" size="lg" className="cursor-pointer">
               <MessageCircle className="mr-2 h-5 w-5" />
               Manage Chatbot
             </Button>
           </Link>
+
+          <Link href="/seller/message" passHref>
+            <Button variant="outline" size="lg" className="cursor-pointer">
+              💬 Reply Messages
+            </Button>
+          </Link>
+
           <Link href="/seller/analytics" passHref>
-            <Button variant="outline" size="lg">
+            <Button variant="outline" size="lg" className="cursor-pointer">
               <BarChart3 className="mr-2 h-5 w-5" />
               Analytics
             </Button>
@@ -100,7 +190,7 @@ export default function SellerDashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat) => {
+          {formattedStats.map((stat) => {
             const Icon = stat.icon;
             return (
               <Card key={stat.label}>
@@ -114,19 +204,13 @@ export default function SellerDashboard() {
                   <div className="text-2xl font-bold text-foreground">
                     {stat.value}
                   </div>
-                  <div className="flex items-center gap-1 mt-1">
-                    <TrendingUp className="h-3 w-3 text-success" />
-                    <span className="text-xs text-success font-medium">
-                      {stat.change}
-                    </span>
-                  </div>
                 </CardContent>
               </Card>
             );
           })}
         </div>
 
-        {/* Recent Products */}
+        {/* ✅ Real Products Section */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -139,43 +223,33 @@ export default function SellerDashboard() {
               </Link>
             </div>
           </CardHeader>
+
           <CardContent>
-            <div className="space-y-4">
-              {recentProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent transition-smooth"
-                >
-                  <div className="flex-1">
-                    <h3 className="font-medium text-foreground">
-                      {product.name}
-                    </h3>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Eye className="h-4 w-4" />
-                        {product.views.toLocaleString()} views
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Package className="h-4 w-4" />
-                        {product.sales} sales
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Badge
-                      variant={
-                        product.status === "active" ? "default" : "secondary"
-                      }
-                    >
-                      {product.status}
-                    </Badge>
-                    <Button variant="ghost" size="sm">
-                      Edit
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {localProducts.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                No products found. Add your first product to get started!
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {localProducts.slice(0, 6).map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    {...p}
+                    imageUrl={p.imageUrl ?? undefined}
+                    sellerName={storeName || ""} // ✅ FIX ADDED
+                    sellerId={sellerId || ""} // ✅ ensures ProductCard gets sellerId
+                    mode="seller"
+                    onUpdated={(updated) => {
+                      setLocalProducts((prev) =>
+                        prev.map((prod) =>
+                          prod.id === p.id ? { ...prod, ...updated } : prod
+                        )
+                      );
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

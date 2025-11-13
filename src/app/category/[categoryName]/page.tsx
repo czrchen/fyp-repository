@@ -1,255 +1,342 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import { useProducts } from "@/contexts/ProductContext";
+import { useCategories } from "@/contexts/CategoryContext";
 import ProductCard from "@/components/ProductCard";
-// import ChatbotWidget from "@/components/ChatbotWidget";
-
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
+import { Filter, ArrowLeft, ChevronRight, ChevronLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { ChevronRight, SlidersHorizontal } from "lucide-react";
-import productHeadphones from "@/assets/product-headphone.webp";
-import productWatch from "@/assets/product-watch.webp";
-import productSneakers from "@/assets/product-sneakers.webp";
-import productPhone from "@/assets/product-phone.png";
-import productBackpack from "@/assets/product-backpack.jpg";
-import productCamera from "@/assets/product-camera.webp";
-
-const mockProducts = [
-  {
-    id: "1",
-    name: "Premium Wireless Headphones",
-    price: 299.99,
-    image: productHeadphones,
-    rating: 4.8,
-    reviews: 1234,
-    category: "Electronics",
-    isNew: true,
-  },
-  {
-    id: "2",
-    name: "Luxury Smart Watch",
-    price: 449.99,
-    image: productWatch,
-    rating: 4.6,
-    reviews: 856,
-    category: "Electronics",
-    discount: 15,
-  },
-  {
-    id: "3",
-    name: "Running Sneakers Pro",
-    price: 129.99,
-    image: productSneakers,
-    rating: 4.9,
-    reviews: 2103,
-    category: "Sports",
-  },
-  {
-    id: "4",
-    name: "Latest Smartphone",
-    price: 899.99,
-    image: productPhone,
-    rating: 4.7,
-    reviews: 3421,
-    category: "Electronics",
-    isNew: true,
-  },
-  {
-    id: "5",
-    name: "Travel Backpack",
-    price: 79.99,
-    image: productBackpack,
-    rating: 4.5,
-    reviews: 678,
-    category: "Fashion",
-  },
-  {
-    id: "6",
-    name: "Professional Camera",
-    price: 1299.99,
-    image: productCamera,
-    rating: 4.9,
-    reviews: 892,
-    category: "Electronics",
-    discount: 20,
-  },
-];
-
-const brands = [
-  { id: "sony", name: "Sony", count: 45 },
-  { id: "apple", name: "Apple", count: 32 },
-  { id: "samsung", name: "Samsung", count: 28 },
-  { id: "nike", name: "Nike", count: 52 },
-];
 
 export default function CategoryPage() {
-  // ✅ Hooks must be declared at top
-  const params = useParams();
-  const categoryName = params?.categoryName as string | undefined;
+  const { categoryName } = useParams() as { categoryName: string };
+  const { products } = useProducts();
+  const { categories } = useCategories();
 
-  const [mounted, setMounted] = useState(false);
-  const [priceRange, setPriceRange] = useState([0, 2000]);
-  const [showFilters, setShowFilters] = useState(true);
+  const [filtered, setFiltered] = useState<any[]>([]);
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>(
+    []
+  );
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [priceRange, setPriceRange] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => setMounted(true), []);
+  // 💰 Price options (radio buttons)
+  const priceOptions = [
+    { id: "all", label: "All Prices", range: [0, Infinity] },
+    { id: "below200", label: "Below RM200", range: [0, 200] },
+    { id: "200to400", label: "RM200 – RM400", range: [200, 400] },
+    { id: "400to600", label: "RM400 – RM600", range: [400, 600] },
+    { id: "above600", label: "Above RM600", range: [600, Infinity] },
+  ];
 
-  // ✅ Guard only renders UI after hydration
-  if (!mounted) return null;
+  // ✅ Find main category
+  const selectedCategory = useMemo(
+    () =>
+      categories.find(
+        (cat: any) => cat.name.toLowerCase() === categoryName.toLowerCase()
+      ),
+    [categoryName, categories]
+  );
 
-  const categoryTitle = categoryName
-    ? categoryName.charAt(0).toUpperCase() + categoryName.slice(1)
-    : "All Products";
+  // ✅ Memoize subcategories and counts
+  const subCategories = useMemo(() => {
+    if (!selectedCategory) return [];
+    return (
+      selectedCategory.children?.map((sub: any) => {
+        const count = products.filter(
+          (p: any) => p.categoryId === sub.id || p.subcategoryId === sub.id
+        ).length;
+        return { id: sub.id, name: sub.name, count };
+      }) || []
+    );
+  }, [selectedCategory?.id, products]); // <-- depends only on stable identifiers
 
-  const filteredProducts = mockProducts.filter(
-    (product) =>
-      !categoryName ||
-      product.category.toLowerCase() === categoryName.toLowerCase()
+  // ✅ Memoize the selected price range array (stable reference)
+  const selectedPriceRange = useMemo(() => {
+    return (
+      priceOptions.find((p) => p.id === priceRange)?.range || [0, Infinity]
+    );
+  }, [priceRange]);
+
+  // ✅ Stable filtering effect
+  useEffect(() => {
+    if (!selectedCategory || products.length === 0) return;
+
+    const [minPrice, maxPrice] = selectedPriceRange;
+    const baseIds = [selectedCategory.id, ...subCategories.map((s) => s.id)];
+    const targetIds =
+      selectedSubcategories.length > 0 ? selectedSubcategories : baseIds;
+
+    const filteredProducts = products.filter((p: any) => {
+      const matchesCategory =
+        targetIds.includes(p.categoryId) || targetIds.includes(p.subcategoryId);
+      const matchesPrice = p.price >= minPrice && p.price <= maxPrice;
+      return matchesCategory && matchesPrice;
+    });
+
+    setFiltered(filteredProducts);
+  }, [
+    products,
+    selectedCategory?.id, // stable identifier
+    selectedSubcategories.join(","), // join ensures dependency is string, not array ref
+    selectedPriceRange.toString(), // stable dependency
+    subCategories.map((s) => s.id).join(","), // stable dependency from array
+  ]);
+
+  // ✅ Toggle subcategory checkbox
+  const toggleSubcategory = (id: string) => {
+    setSelectedSubcategories((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  // 4 rows × 4 columns = 16 products per page
+  const productsPerPage = 18;
+  const totalPages = Math.ceil(products.length / productsPerPage);
+
+  // Calculate products for current page
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = filtered.slice(
+    indexOfFirstProduct,
+    indexOfLastProduct
+  );
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
+
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
+  // ✅ Sidebar Component (Subcategory + Price Filter)
+  const Sidebar = () => (
+    <div className="border border-border rounded-lg p-4 bg-card space-y-6">
+      {/* 🧩 Subcategory Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Subcategories
+        </h3>
+        <div className="space-y-2">
+          {subCategories.length > 0 ? (
+            subCategories.map((s) => (
+              <div key={s.id} className="flex items-center space-x-2">
+                <Checkbox
+                  checked={selectedSubcategories.includes(s.id)}
+                  onCheckedChange={() => toggleSubcategory(s.id)}
+                />
+                <label className="text-sm text-foreground cursor-pointer flex-1">
+                  {s.name}
+                  {s.count > 0 && (
+                    <span className="text-muted-foreground ml-1">
+                      ({s.count})
+                    </span>
+                  )}
+                </label>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No subcategories available.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* 💰 Price Range Filter */}
+      <div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          Price Range
+        </h3>
+        <div className="space-y-2">
+          {priceOptions.map((option) => (
+            <label
+              key={option.id}
+              className="flex items-center space-x-2 cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="priceRange"
+                value={option.id}
+                checked={priceRange === option.id}
+                onChange={() => setPriceRange(option.id)}
+                className="text-primary focus:ring-primary"
+              />
+              <span className="text-sm">{option.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
-      {/* Breadcrumb */}
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground transition-smooth">
-            Home
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-foreground font-medium">{categoryTitle}</span>
-        </div>
-      </div>
-      {/* Page Header */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              {categoryTitle}
-            </h1>
-            <p className="text-muted-foreground">
-              {filteredProducts.length} products found
-            </p>
-          </div>
+      <div className="container mx-auto px-4 md:px-10 py-10">
+        {/* 🏠 Back to Home */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-primary hover:underline mb-6"
+        >
+          <ArrowLeft size={18} />
+          Back to Home
+        </Link>
+
+        {/* 🔖 Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold capitalize">
+            {categoryName} Products
+          </h1>
           <Button
             variant="outline"
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2"
+            size="sm"
+            className="flex items-center gap-2 lg:hidden"
+            onClick={() => setShowSidebar(true)}
           >
-            <SlidersHorizontal className="h-4 w-4" />
-            {showFilters ? "Hide" : "Show"} Filters
+            <Filter size={16} />
+            Filters
           </Button>
         </div>
-      </div>
-      {/* Main Content */}
-      <div className="container mx-auto px-4 pb-12">
-        <div className="flex gap-8">
-          {/* Filters Sidebar */}
-          {showFilters && (
-            <aside className="w-64 flex-shrink-0 hidden lg:block">
-              <Card className="p-6 sticky top-4">
-                <h3 className="font-semibold text-lg mb-4 text-foreground">
+
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* 🧱 Desktop Sidebar */}
+          <aside className="hidden lg:block w-72 flex-shrink-0">
+            <Sidebar />
+          </aside>
+
+          {/* 🛍 Product Grid */}
+          <main className="flex-1">
+            {currentProducts.length > 0 ? (
+              <>
+                {/* 🧩 Product Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {currentProducts.map((p: any) => (
+                    <Link
+                      key={p.id}
+                      href={`/product/${p.id}`}
+                      className="block transition-transform hover:scale-[1.02] duration-200"
+                    >
+                      <ProductCard {...p} mode="buyer" />
+                    </Link>
+                  ))}
+                </div>
+
+                {/* 🧭 Pagination (move OUTSIDE the grid) */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-12 mx-auto w-fit">
+                    {/* Previous */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="h-9 w-9 p-0"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+
+                    {/* Page Numbers */}
+                    {getPageNumbers().map((page, index) =>
+                      page === "..." ? (
+                        <span
+                          key={`ellipsis-${index}`}
+                          className="px-2 text-muted-foreground"
+                        >
+                          ...
+                        </span>
+                      ) : (
+                        <Button
+                          key={page}
+                          variant={currentPage === page ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => setCurrentPage(page as number)}
+                          className="h-9 w-9 p-0"
+                        >
+                          {page}
+                        </Button>
+                      )
+                    )}
+
+                    {/* Next */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="h-9 w-9 p-0"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-muted-foreground text-center text-lg">
+                No products found in {categoryName}.
+              </p>
+            )}
+          </main>
+        </div>
+
+        {/* 📱 Mobile Sidebar Overlay */}
+        <AnimatePresence>
+          {showSidebar && (
+            <motion.div
+              key="filterSidebar"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", stiffness: 80, damping: 15 }}
+              className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm p-6 lg:hidden overflow-y-auto"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-semibold text-lg text-foreground">
                   Filters
                 </h3>
-
-                <Separator className="my-4" />
-
-                {/* Price Range */}
-                <div className="space-y-4">
-                  <h4 className="font-medium text-sm text-foreground">
-                    Price Range
-                  </h4>
-                  <Slider
-                    min={0}
-                    max={2000}
-                    step={50}
-                    value={priceRange}
-                    onValueChange={setPriceRange}
-                    className="my-4"
-                  />
-                  <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>${priceRange[0]}</span>
-                    <span>${priceRange[1]}</span>
-                  </div>
-                </div>
-
-                <Separator className="my-4" />
-
-                {/* Brands */}
-                <div className="space-y-3">
-                  <h4 className="font-medium text-sm text-foreground">
-                    Brands
-                  </h4>
-                  {brands.map((brand) => (
-                    <div key={brand.id} className="flex items-center gap-2">
-                      <Checkbox id={brand.id} />
-                      <label
-                        htmlFor={brand.id}
-                        className="text-sm text-muted-foreground cursor-pointer flex-1"
-                      >
-                        {brand.name}
-                        <span className="text-xs ml-1">({brand.count})</span>
-                      </label>
-                    </div>
-                  ))}
-                </div>
-
-                <Separator className="my-4" />
-
-                {/* Rating */}
-                <div className="space-y-3">
-                  <h4 className="font-medium text-sm text-foreground">
-                    Rating
-                  </h4>
-                  {[5, 4, 3, 2, 1].map((rating) => (
-                    <div key={rating} className="flex items-center gap-2">
-                      <Checkbox id={`rating-${rating}`} />
-                      <label
-                        htmlFor={`rating-${rating}`}
-                        className="text-sm text-muted-foreground cursor-pointer flex-1"
-                      >
-                        {rating} Stars & Up
-                      </label>
-                    </div>
-                  ))}
-                </div>
-
-                <Separator className="my-4" />
-
-                <Button variant="outline" className="w-full">
-                  Apply Filters
-                </Button>
-              </Card>
-            </aside>
-          )}
-
-          {/* Products Grid */}
-          <div className="flex-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} {...product} />
-              ))}
-            </div>
-
-            {filteredProducts.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground text-lg">
-                  No products found in this category
-                </p>
-                <Button asChild className="mt-4">
-                  <Link href="/">Back to Home</Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowSidebar(false)}
+                >
+                  ✕
                 </Button>
               </div>
-            )}
-          </div>
-        </div>
+              <Sidebar />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      {/* <ChatbotWidget /> */}
     </div>
   );
 }

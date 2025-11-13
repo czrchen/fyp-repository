@@ -1,65 +1,80 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
-import { toast } from "sonner"; // ✅ import directly from "sonner"
-import type { StaticImageData } from "next/image";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from "react";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 export interface CartItem {
-  id: string;
-  name: string;
+  id: string; // cartItem UUID
+  productId: string; // reference to Product
+  variantId?: string | null; // optional reference to ProductVariant
+  attributes?: Record<string, string> | null;
+  name: string; // display name (variant name or product name)
   price: number;
-  image: string | StaticImageData;
+  image: string;
   quantity: number;
+  sellerId?: string;
+  sellerName?: string;
+  product?: any; // full product object (if included from API)
+  variant?: any; // full variant object (if included from API)
 }
 
 interface CartContextType {
   items: CartItem[];
   addToCart: (item: Omit<CartItem, "quantity">) => void;
-  removeFromCart: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
+  removeFromCart: (productId: string, variantId?: string | null) => void;
+  updateQuantity: (
+    productId: string,
+    quantity: number,
+    variantId?: string | null
+  ) => void;
   clearCart: () => void;
+  fetchCart: () => Promise<void>;
   totalItems: number;
-  totalPrice: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const { data: session, status } = useSession();
   const [items, setItems] = useState<CartItem[]>([]);
 
+  // 🛒 Add item to cart
   const addToCart = (item: Omit<CartItem, "quantity">) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      const existing = prev.find(
+        (i) => i.productId === item.productId && i.variantId === item.variantId
+      );
+
       if (existing) {
-        toast.success(`Updated cart`, {
-          description: `Increased quantity of ${item.name}`,
-        });
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
+          i.productId === item.productId && i.variantId === item.variantId
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
         );
       }
-      toast.success(`Added to cart`, {
-        description: `${item.name} has been added to your cart`,
-      });
       return [...prev, { ...item, quantity: 1 }];
     });
   };
 
+  // 🗑 Remove item locally
   const removeFromCart = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
-    toast.error(`Removed from cart`, {
-      description: "Item has been removed from your cart",
-    });
   };
 
+  // 🔢 Update item quantity locally
   const updateQuantity = (id: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(id);
-      return;
-    }
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
   };
 
+  // 🧹 Clear entire cart
   const clearCart = () => {
     setItems([]);
     toast.warning(`Cart cleared`, {
@@ -67,11 +82,37 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  // 🔄 Fetch cart from backend
+  const fetchCart = useCallback(async () => {
+    if (status !== "authenticated" || !session?.user?.id) {
+      setItems([]);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/cart", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to fetch cart");
+      const data = await res.json();
+
+      // backend should include: product + variant + seller
+      setItems(data.items || []);
+      console.log("🛍️ Cart items loaded:", data.items);
+    } catch (err) {
+      console.error("❌ Failed to fetch cart:", err);
+    }
+  }, [session?.user?.id, status]);
+
+  // 👤 Re-fetch on auth changes
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.id) {
+      fetchCart();
+    } else if (status === "unauthenticated") {
+      setItems([]);
+    }
+  }, [status, session?.user?.id, fetchCart]);
+
+  // 🧮 Total quantity counter
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
 
   return (
     <CartContext.Provider
@@ -81,8 +122,8 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         removeFromCart,
         updateQuantity,
         clearCart,
+        fetchCart,
         totalItems,
-        totalPrice,
       }}
     >
       {children}
@@ -90,10 +131,9 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// ✅ Hook
 export const useCart = () => {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error("useCart must be used within a CartProvider");
-  }
+  if (!context) throw new Error("useCart must be used within a CartProvider");
   return context;
 };

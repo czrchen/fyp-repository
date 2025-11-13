@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useChatbot } from "@/contexts/ChatbotContext";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,61 +19,74 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Plus, Trash2, AlertCircle, Save } from "lucide-react";
 import { toast } from "sonner";
 
-interface FAQ {
-  id: string;
-  question: string;
-  answer: string;
-}
-
 export default function ChatbotManagement() {
-  // 🧠 Example seller ID — replace with actual logged-in seller ID later
-  const sellerId = "seller001";
-
-  const [storeDescription, setStoreDescription] = useState(
-    "Welcome to our store! We provide high-quality products at affordable prices."
-  );
-
-  const [faqs, setFaqs] = useState<FAQ[]>([
-    {
-      id: "1",
-      question: "What are your shipping times?",
-      answer: "We ship within 2-3 business days.",
-    },
-    {
-      id: "2",
-      question: "Do you offer refunds?",
-      answer: "Yes, we offer a 30-day money-back guarantee.",
-    },
-  ]);
-
+  const { chatbot, isLoading, setChatbot, refetchChatbot } = useChatbot();
   const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
   const [isSaving, setIsSaving] = useState(false);
 
-  const MAX_FAQS = 10;
-  const remainingSlots = MAX_FAQS - faqs.length;
+  // 🧱 Fallback chatbot template for new users
+  const emptyChatbot = {
+    id: -1,
+    sellerId: "",
+    storeDescription: "",
+    faqs: [],
+  };
 
+  // 🕓 Loading state
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center text-muted-foreground">
+        Loading chatbot data...
+      </div>
+    );
+  }
+
+  // 🧠 Use either existing chatbot or a blank template
+  const currentChatbot = chatbot ?? emptyChatbot;
+  const MAX_FAQS = 10;
+  const remainingSlots = MAX_FAQS - (currentChatbot.faqs?.length ?? 0);
+
+  // 🧠 Update store description in context
+  const handleDescriptionChange = (value: string) => {
+    setChatbot((prev) =>
+      prev
+        ? { ...prev, storeDescription: value }
+        : { ...emptyChatbot, storeDescription: value }
+    );
+  };
+
+  // ➕ Add new FAQ
   const handleAddFaq = () => {
     if (!newFaq.question || !newFaq.answer) {
       toast.error("Please fill in both question and answer");
       return;
     }
 
-    if (faqs.length >= MAX_FAQS) {
+    if (currentChatbot.faqs.length >= MAX_FAQS) {
       toast.error(`You can only add up to ${MAX_FAQS} FAQs`);
       return;
     }
 
-    setFaqs([...faqs, { id: Date.now().toString(), ...newFaq }]);
+    const newItem = { id: Date.now().toString(), ...newFaq };
+    setChatbot((prev) =>
+      prev
+        ? { ...prev, faqs: [...prev.faqs, newItem] }
+        : { ...emptyChatbot, faqs: [newItem] }
+    );
+
     setNewFaq({ question: "", answer: "" });
     toast.success("FAQ added successfully!");
   };
 
+  // ❌ Delete FAQ
   const handleDeleteFaq = (id: string) => {
-    setFaqs(faqs.filter((faq) => faq.id !== id));
+    setChatbot((prev) =>
+      prev ? { ...prev, faqs: prev.faqs.filter((f) => f.id !== id) } : prev
+    );
     toast.info("FAQ removed successfully");
   };
 
-  // 🧩 Save to database via your API
+  // 💾 Save chatbot to DB (create or update)
   const handleSaveChatbot = async () => {
     setIsSaving(true);
     try {
@@ -80,18 +94,19 @@ export default function ChatbotManagement() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sellerId,
-          faqs: faqs.map((f) => ({
-            question: f.question,
-            answer: f.answer,
+          sellerId: currentChatbot.sellerId,
+          faqs: currentChatbot.faqs.map(({ question, answer }) => ({
+            question,
+            answer,
           })),
-          storeDescription,
+          storeDescription: currentChatbot.storeDescription,
         }),
       });
 
       if (!res.ok) throw new Error("Failed to save chatbot");
 
       toast.success("Chatbot and store info saved successfully!");
+      await refetchChatbot();
     } catch (error) {
       console.error(error);
       toast.error("Failed to save chatbot configuration");
@@ -102,7 +117,7 @@ export default function ChatbotManagement() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation Bar */}
+      {/* 🧭 Navigation Bar */}
       <nav className="bg-card border-b border-border">
         <div className="container mx-auto px-4">
           <div className="flex items-center h-16">
@@ -117,16 +132,17 @@ export default function ChatbotManagement() {
       </nav>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">
             Chatbot Management
           </h1>
           <p className="text-muted-foreground">
-            Manage your automated FAQ responses and store info
+            Manage your automated FAQ responses and store information
           </p>
         </div>
 
-        {/* ✅ Store Description Section */}
+        {/* 🏪 Store Description */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Store Description</CardTitle>
@@ -138,28 +154,29 @@ export default function ChatbotManagement() {
             <Textarea
               placeholder="Write a short description about your store..."
               rows={4}
-              value={storeDescription}
-              onChange={(e) => setStoreDescription(e.target.value)}
+              value={currentChatbot.storeDescription ?? ""}
+              onChange={(e) => handleDescriptionChange(e.target.value)}
             />
           </CardContent>
         </Card>
 
+        {/* ℹ️ Info Alert */}
         <Alert className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            You can add up to {MAX_FAQS} FAQs. Currently using {faqs.length} of{" "}
-            {MAX_FAQS} slots.
+            You can add up to {MAX_FAQS} FAQs. Currently using{" "}
+            {currentChatbot.faqs.length} of {MAX_FAQS} slots.
           </AlertDescription>
         </Alert>
 
-        {/* Add New FAQ */}
+        {/* ➕ Add New FAQ */}
         <Card className="mb-6">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Add New FAQ</CardTitle>
                 <CardDescription>
-                  Create automated responses for common questions
+                  Create automated responses for common questions.
                 </CardDescription>
               </div>
               <Badge variant={remainingSlots > 3 ? "secondary" : "destructive"}>
@@ -173,7 +190,7 @@ export default function ChatbotManagement() {
                 <Label htmlFor="question">Question</Label>
                 <Input
                   id="question"
-                  placeholder="Enter frequently asked question"
+                  placeholder="Enter a frequently asked question"
                   value={newFaq.question}
                   onChange={(e) =>
                     setNewFaq({ ...newFaq, question: e.target.value })
@@ -196,7 +213,7 @@ export default function ChatbotManagement() {
 
               <Button
                 onClick={handleAddFaq}
-                disabled={faqs.length >= MAX_FAQS}
+                disabled={currentChatbot.faqs.length >= MAX_FAQS}
                 className="w-full"
               >
                 <Plus className="mr-2 h-4 w-4" />
@@ -206,24 +223,24 @@ export default function ChatbotManagement() {
           </CardContent>
         </Card>
 
-        {/* Existing FAQs */}
+        {/* 📋 Existing FAQs */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Your FAQs ({faqs.length})</CardTitle>
+            <CardTitle>Your FAQs ({currentChatbot.faqs.length})</CardTitle>
             <CardDescription>
-              Manage your existing automated responses
+              Manage your existing automated responses.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {faqs.length === 0 ? (
+            {currentChatbot.faqs.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 No FAQs added yet. Add your first FAQ above.
               </div>
             ) : (
               <div className="space-y-4">
-                {faqs.map((faq) => (
+                {currentChatbot.faqs.map((faq) => (
                   <div
-                    key={faq.id}
+                    key={faq.id ?? faq.question}
                     className="p-4 rounded-lg border border-border hover:bg-accent transition-smooth"
                   >
                     <div className="flex items-start justify-between gap-4">
@@ -238,7 +255,7 @@ export default function ChatbotManagement() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteFaq(faq.id)}
+                        onClick={() => handleDeleteFaq(faq.id ?? faq.question)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -250,7 +267,7 @@ export default function ChatbotManagement() {
           </CardContent>
         </Card>
 
-        {/* ✅ Save All Changes Button */}
+        {/* 💾 Save All Changes */}
         <div className="flex justify-end">
           <Button onClick={handleSaveChatbot} disabled={isSaving}>
             <Save className="mr-2 h-4 w-4" />
