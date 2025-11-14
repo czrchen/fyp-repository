@@ -52,8 +52,21 @@ export default function SellerDashboard() {
 
   if (isLoading)
     return (
-      <div className="flex h-screen items-center justify-center text-muted-foreground">
-        Loading seller dashboard...
+      <div className="flex h-screen items-center justify-center">
+        <div className="flex items-center gap-1 text-lg text-muted-foreground">
+          <span className="animate-bounce [animation-delay:-0.3s]">
+            Loading
+          </span>
+          <span className="animate-bounce [animation-delay:-0.2s]">seller</span>
+          <span className="animate-bounce [animation-delay:-0.1s]">
+            dashboard
+          </span>
+          <span className="inline-flex gap-1 ml-0.5">
+            <span className="animate-bounce [animation-delay:-0.3s]">.</span>
+            <span className="animate-bounce [animation-delay:-0.15s]">.</span>
+            <span className="animate-bounce">.</span>
+          </span>
+        </div>
       </div>
     );
 

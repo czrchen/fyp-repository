@@ -14,7 +14,7 @@ const ProductContext = createContext<any>(null);
 
 export function ProductProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [productLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 🔁 Fetch products from backend
@@ -97,7 +97,7 @@ export function ProductProvider({ children }: { children: React.ReactNode }) {
     <ProductContext.Provider
       value={{
         products,
-        isLoading,
+        productLoading,
         error,
         refetchProducts,
         setProducts,

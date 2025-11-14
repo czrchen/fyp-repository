@@ -10,6 +10,8 @@ import { useCategories } from "@/contexts/CategoryContext";
 import FilterModal from "@/components/FilterModal";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { useEffect, useState } from "react";
 import {
   Sparkles,
@@ -19,18 +21,23 @@ import {
   ChevronLeft,
   ChevronRight,
   Package,
+  Loader2,
 } from "lucide-react";
 import { useProducts } from "@/contexts/ProductContext";
+import { useProfile } from "@/contexts/ProfileContext"; // ✅ add this
 import ProfileCompletionModal from "@/components/ProfileCompletion";
 import heroBanner from "@/assets/hero-banner.jpg";
 
 export default function HomePage() {
-  const { products, refetchProducts } = useProducts();
+  const { products, refetchProducts, productLoading } = useProducts();
+  const { categories, isLoading } = useCategories();
+  const [userLoading, setUserLoading] = useState(false);
   const { data: userSession } = useSession();
   const [user, setUser] = useState<any>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const { categories, isLoading } = useCategories();
   const [currentPage, setCurrentPage] = useState(1);
+  const [showLoadingModal, setShowLoadingModal] = useState(true);
+  let load = 0;
 
   // 4 rows × 4 columns = 16 products per page
   const productsPerPage = 16;
@@ -75,6 +82,19 @@ export default function HomePage() {
   };
 
   useEffect(() => {
+    if (load > 0) {
+      return;
+    }
+    const allLoaded =
+      productLoading === false && isLoading === false && userLoading === false;
+
+    if (allLoaded == true) {
+      setShowLoadingModal(!allLoaded);
+      load += 1;
+    }
+  }, [productLoading, isLoading, userLoading]);
+
+  useEffect(() => {
     // Check if session ID already exists
     let sessionId = localStorage.getItem("sessionId");
     if (!sessionId) {
@@ -86,11 +106,13 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchUser = async () => {
+      setUserLoading(true);
       const res = await fetch("/api/user/current");
       if (!res.ok) return console.error("Failed to fetch current user");
 
       const data = await res.json();
       setUser(data);
+      setUserLoading(false);
 
       // ✅ Auto-open profile completion modal if incomplete
       if (!data.profile_completed) {
@@ -103,6 +125,50 @@ export default function HomePage() {
       fetchUser();
     }
   }, [userSession]);
+
+  if (showLoadingModal)
+    return (
+      <Dialog open={showLoadingModal}>
+        <DialogContent
+          className="
+      sm:max-w-[400px] w-[90%] max-h-[90vh] overflow-y-auto
+      fixed !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2
+      p-12 rounded-2xl shadow-2xl bg-white dark:bg-background
+      border border-border/30
+    "
+        >
+          {/* Hidden but required title */}
+          <VisuallyHidden>
+            <DialogTitle>Loading</DialogTitle>
+          </VisuallyHidden>
+
+          <div className="flex flex-col items-center justify-center gap-6">
+            {/* Animated loader with glow effect */}
+            <div className="relative">
+              <div className="absolute inset-0 blur-xl bg-primary/30 rounded-full animate-pulse" />
+              <Loader2 className="relative h-12 w-12 animate-spin text-green-600"/>
+            </div>
+
+            {/* Text content */}
+            <div className="text-center space-y-2">
+              <p className="text-xl font-semibold tracking-tight">
+                Loading your information
+              </p>
+              <p className="text-sm text-muted-foreground">
+                This will only take a moment
+              </p>
+            </div>
+
+            {/* Optional: Loading progress dots */}
+            <div className="flex gap-1.5">
+              <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.3s]" />
+              <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:-0.15s]" />
+              <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce" />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
 
   return (
     <div className="min-h-screen bg-background">

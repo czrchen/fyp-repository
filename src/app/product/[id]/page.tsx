@@ -27,7 +27,7 @@ import { toast } from "sonner";
 
 export default function ProductDetail() {
   const { id } = useParams();
-  const { products, isLoading } = useProducts();
+  const { products, productLoading } = useProducts();
   const { addToCart, fetchCart } = useCart();
   const { refetchSessions } = useBuyerMessages();
   const router = useRouter();
@@ -204,7 +204,7 @@ export default function ProductDetail() {
     return null;
   }, [selectedVariant, product]);
 
-  if (isLoading)
+  if (productLoading)
     return <div className="p-10 text-center">Loading products...</div>;
   if (!product)
     return (

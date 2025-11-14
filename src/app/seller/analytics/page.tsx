@@ -19,6 +19,7 @@ import {
   ShoppingCart,
   Eye,
   Users,
+  Star,
 } from "lucide-react";
 import { useSeller } from "@/contexts/SellerContext";
 import { useOrders } from "@/contexts/OrderContext";
@@ -65,6 +66,21 @@ export default function SellerAnalytics() {
       icon: Users,
     },
   ];
+
+  const RatingStars = ({ rating = 0 }) => {
+    return (
+      <div className="flex gap-0.5">
+        {[1, 2, 3, 4, 5].map((n) => (
+          <Star
+            key={n}
+            className={`h-4 w-4 ${
+              n <= rating ? "fill-yellow-500 text-yellow-500" : "text-gray-300"
+            }`}
+          />
+        ))}
+      </div>
+    );
+  };
 
   // 🟦 Top Products (sorted by salesCount)
   const topProducts = [...products]
@@ -222,8 +238,8 @@ export default function SellerAnalytics() {
                 ) : (
                   orders.map((order) => {
                     const open = openMap[order.orderId] ?? false;
-                    const isCompleted = order.items.every(
-                      (i) => i.status === "Delivered"
+                    const isCompleted = order.items.every((i) =>
+                      ["Received", "Cancelled"].includes(i.status)
                     );
 
                     return (
@@ -290,27 +306,28 @@ export default function SellerAnalytics() {
                                   </div>
 
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-gray-900 text-base mb-1 truncate">
-                                      {item.product.name}
-                                    </h4>
-
-                                    {item.attributes && (
-                                      <div className="flex flex-wrap gap-2 mb-2">
-                                        {Object.entries(item.attributes).map(
-                                          ([k, v]) => (
-                                            <span
-                                              key={k}
-                                              className="inline-flex items-center px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-700"
-                                            >
-                                              <span className="font-medium">
-                                                {k}:
-                                              </span>
-                                              <span className="ml-1">{v}</span>
+                                    <div className="flex flex-col">
+                                      <p className="font-medium">
+                                        {item.product.name}
+                                      </p>
+                                      <p className="font-medium">
+                                        {/* 🏷️ Show selected attributes, if any */}
+                                        {item.attributes &&
+                                          Object.keys(item.attributes).length >
+                                            0 && (
+                                            <span className="text-sm text-muted-foreground">
+                                              (
+                                              {Object.entries(item.attributes)
+                                                .map(
+                                                  ([key, val]) =>
+                                                    `${key}: ${val}`
+                                                )
+                                                .join(", ")}
+                                              )
                                             </span>
-                                          )
-                                        )}
-                                      </div>
-                                    )}
+                                          )}
+                                      </p>
+                                    </div>
 
                                     <div className="flex items-center gap-3 text-sm text-gray-600">
                                       <span className="flex items-center gap-1">
@@ -321,9 +338,6 @@ export default function SellerAnalytics() {
                                       </span>
                                       <span className="text-gray-300">•</span>
                                       <span className="flex items-center gap-1">
-                                        <span className="font-medium">
-                                          Unit Price:
-                                        </span>
                                         <span>RM {item.price.toFixed(2)}</span>
                                       </span>
                                     </div>
@@ -478,21 +492,28 @@ export default function SellerAnalytics() {
                                         className="w-16 h-16 object-cover rounded-lg"
                                       />
 
-                                      <div>
-                                        <p className="font-medium">
-                                          {item.product.name}
-                                        </p>
+                                      <div className="flex flex-col gap-1">
+                                        <div>
+                                          <p className="font-medium">
+                                            {item.product.name}
+                                          </p>
+                                        </div>
 
-                                        <p className="text-sm text-muted-foreground">
-                                          Rating:{" "}
-                                          <span className="font-semibold">
-                                            {item.rating ?? "—"}
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-sm text-muted-foreground">
+                                            Rating:
                                           </span>
-                                        </p>
+                                          <RatingStars rating={item.rating} />
+                                        </div>
 
-                                        <p className="text-sm text-gray-700">
-                                          {item.feedback || "No comment"}
-                                        </p>
+                                        <div>
+                                          <p className="text-sm text-gray-700">
+                                            Feedback:
+                                            <span className="ml-2 inline-block bg-blue-100 text-black px-2 py-1 rounded-full text-xs font-medium">
+                                              {item.feedback || "No comment"}
+                                            </span>
+                                          </p>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>

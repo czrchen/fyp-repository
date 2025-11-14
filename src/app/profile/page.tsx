@@ -368,7 +368,7 @@ const Profile = () => {
 
           <TabsContent
             value="orders"
-            className="space-y-4 min-h-[400px] lg:min-h-[450px]"
+            className="space-y-4 min-h-[400px] lg:min-h-[540px]"
           >
             <Card>
               <CardHeader>
@@ -388,8 +388,8 @@ const Profile = () => {
                       .slice(0, showAll ? orders.length : 3)
                       .map((order) => {
                         const isOpen = expanded === order.id;
-                        const allDelivered = order.items.every(
-                          (i) => i.status === "Delivered"
+                        const allDelivered = order.items.every((i) =>
+                          ["Received", "Cancelled"].includes(i.status)
                         );
 
                         return (
@@ -418,7 +418,12 @@ const Profile = () => {
 
                               <div className="flex items-center gap-2">
                                 <Badge
-                                  variant={allDelivered ? "default" : "outline"}
+                                  variant="outline"
+                                  className={
+                                    allDelivered
+                                      ? "bg-green-100 text-green-600 border-green-200"
+                                      : "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                  }
                                 >
                                   {allDelivered ? "Completed" : "In Progress"}
                                 </Badge>
@@ -453,36 +458,44 @@ const Profile = () => {
                                         className="w-16 h-16 object-cover rounded"
                                       />
                                       <div>
-                                        <p className="font-medium">
-                                          {item.name}
+                                        <div className="flex flex-col">
+                                          <p className="font-medium">
+                                            {item.name}
+                                          </p>
 
-                                          {/* 🏷️ Show selected attributes, if any */}
-                                          {item.attributes &&
-                                            Object.keys(item.attributes)
-                                              .length > 0 && (
-                                              <span className="text-sm text-muted-foreground ml-1">
-                                                (
-                                                {Object.entries(item.attributes)
-                                                  .map(
-                                                    ([key, val]) =>
-                                                      `${key}: ${val}`
+                                          <p>
+                                            {/* 🏷️ Show selected attributes, if any */}
+                                            {item.attributes &&
+                                              Object.keys(item.attributes)
+                                                .length > 0 && (
+                                                <span className="text-sm text-muted-foreground">
+                                                  (
+                                                  {Object.entries(
+                                                    item.attributes
                                                   )
-                                                  .join(", ")}
-                                                )
-                                              </span>
-                                            )}
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                          Qty: {item.quantity} × RM{" "}
-                                          {item.price.toFixed(2)}
-                                        </p>
+                                                    .map(
+                                                      ([key, val]) =>
+                                                        `${key}: ${val}`
+                                                    )
+                                                    .join(", ")}
+                                                  )
+                                                </span>
+                                              )}
+                                          </p>
+
+                                          <p className="text-sm text-muted-foreground mt-0.5">
+                                            Qty: {item.quantity} × RM{" "}
+                                            {item.price.toFixed(2)}
+                                          </p>
+                                        </div>
+
                                         <Badge
                                           variant={
                                             item.status === "Delivered"
                                               ? "default"
                                               : "outline"
                                           }
-                                          className="mt-1"
+                                          className="mt-2"
                                         >
                                           {item.status}
                                         </Badge>
@@ -525,7 +538,7 @@ const Profile = () => {
           {/* Chatbot Interaction History */}
           <TabsContent
             value="chats"
-            className="space-y-4 min-h-[400px] lg:min-h-[450px]"
+            className="space-y-4 min-h-[400px] lg:min-h-[540px]"
           >
             <Card>
               <CardHeader>
@@ -602,7 +615,7 @@ const Profile = () => {
           {/* Review & Feedback Section */}
           <TabsContent
             value="reviews"
-            className="space-y-4 min-h-[400px] lg:min-h-[450px]"
+            className="space-y-4 min-h-[400px] lg:min-h-[540px]"
           >
             <Card>
               <CardHeader>
