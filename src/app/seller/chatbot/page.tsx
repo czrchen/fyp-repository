@@ -119,7 +119,7 @@ export default function ChatbotManagement() {
     <div className="min-h-screen bg-background">
       {/* 🧭 Navigation Bar */}
       <nav className="bg-card border-b border-border">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-14">
           <div className="flex items-center h-16">
             <Link href="/seller" passHref>
               <Button variant="ghost" size="sm">
@@ -131,7 +131,7 @@ export default function ChatbotManagement() {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-18 py-8">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground mb-2">

@@ -7,6 +7,7 @@ import { OrderProvider } from "@/contexts/OrderContext";
 import { ProductProvider } from "@/contexts/ProductContext";
 import { BuyerMessageProvider } from "@/contexts/BuyerMessageContext";
 import { CategoryProvider } from "@/contexts/CategoryContext";
+import { AllSellerInfoProvider } from "@/contexts/AllSellerInfoContext";
 import ChatbotWidget from "@/components/ChatbotWidget";
 import { ProfileProvider } from "@/contexts/ProfileContext";
 import { Toaster } from "sonner";
@@ -34,7 +35,9 @@ export default function AppProviders({
           <ProductProvider>
             <CategoryProvider>
               <BuyerMessageProvider>
-                <AuthenticatedProviders>{children}</AuthenticatedProviders>
+                <AllSellerInfoProvider>
+                  <AuthenticatedProviders>{children}</AuthenticatedProviders>
+                </AllSellerInfoProvider>
               </BuyerMessageProvider>
             </CategoryProvider>
           </ProductProvider>

@@ -311,7 +311,11 @@ export default function ProductDetail() {
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                    {product.seller?.store_name?.charAt(0) ?? "S"}
+                    <img
+                      src={product.seller?.store_logo}
+                      alt={product.seller?.store_name}
+                      className="h-9 w-9 rounded-full object-cover border"
+                    />
                   </div>
 
                   <div>
@@ -323,7 +327,7 @@ export default function ProductDetail() {
 
                 <div className="flex gap-2">
                   {/* Visit Store */}
-                  <Link href={`/seller/${product.seller?.id}`}>
+                  <Link href={`/sellers/${product.seller?.id}`}>
                     <Button variant="outline" size="sm">
                       Visit Store
                     </Button>

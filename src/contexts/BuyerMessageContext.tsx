@@ -25,6 +25,7 @@ type ChatSession = {
   buyerId: string;
   sellerId: string;
   sellerName: string;
+  sellerLogo?: string;
   isActive: boolean;
   unreadCount: number;
   messages: ChatMessage[];

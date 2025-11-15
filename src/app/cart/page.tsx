@@ -126,7 +126,7 @@ export default function CartPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-18 py-8">
         <h1 className="text-3xl font-bold mb-8 text-foreground">
           Shopping Cart ({totalItems} items)
         </h1>
@@ -147,13 +147,29 @@ export default function CartPage() {
               return (
                 <div key={sellerName} className="space-y-3">
                   {/* 🏪 Store header */}
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-3 mb-2">
+                    {/* Store checkbox */}
                     <input
                       type="checkbox"
                       checked={allSelected}
                       onChange={() => toggleStore(storeItems)}
                       className="h-4 w-4 accent-primary cursor-pointer"
                     />
+
+                    {/* Store Logo */}
+                    {storeItems[0]?.sellerLogo ? (
+                      <img
+                        src={storeItems[0].sellerLogo}
+                        alt={sellerName}
+                        className="h-8 w-8 rounded-full object-cover border"
+                      />
+                    ) : (
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-semibold border">
+                        {sellerName[0]}
+                      </div>
+                    )}
+
+                    {/* Store Name */}
                     <h2 className="text-lg font-semibold text-foreground">
                       {sellerName}
                     </h2>

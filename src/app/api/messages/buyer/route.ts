@@ -31,7 +31,7 @@ export async function GET() {
             },
             include: {
                 seller: {
-                    select: { id: true, store_name: true },
+                    select: { id: true, store_name: true, store_logo: true },
                 },
                 messages: {
                     orderBy: { createdAt: "asc" },
@@ -53,6 +53,7 @@ export async function GET() {
                 buyerId: s.buyerId,
                 sellerId: s.sellerId,
                 sellerName: s.seller.store_name,
+                sellerLogo: s.seller.store_logo,
                 isActive: s.isActive,
                 unreadCount,        // 👈 new field
                 messages: s.messages,

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import ImageUploader from "@/components/ImageUploader";
 import { toast } from "sonner";
 
 export default function RegisterSellerDialog({
@@ -113,63 +114,33 @@ export default function RegisterSellerDialog({
           <div className="space-y-2">
             <Label>Store Logo</Label>
 
-            <div
-              className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition"
-              onClick={() => document.getElementById("store_logo")?.click()}
-            >
-              {form.store_logo ? (
-                <>
-                  <img
-                    src={form.store_logo}
-                    alt="Store Logo Preview"
-                    className="w-24 h-24 rounded-md object-cover mb-2"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Click to change
-                  </p>
-                </>
-              ) : (
-                <>
-                  <div className="flex flex-col items-center text-muted-foreground">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-10 w-10 mb-1 text-muted-foreground"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    <p className="text-sm">Click to upload logo</p>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <input
-              id="store_logo"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    setForm((prev) => ({
-                      ...prev,
-                      store_logo: reader.result as string, // base64 string
-                    }));
-                  };
-                  reader.readAsDataURL(file);
-                }
-              }}
+            <ImageUploader
+              onUploaded={(url: any) =>
+                setForm((prev) => ({
+                  ...prev,
+                  store_logo: url,
+                }))
+              }
             />
+
+            {form.store_logo && (
+              <div className="relative mt-2 w-24 h-24">
+                <img
+                  src={form.store_logo}
+                  alt="Store Logo Preview"
+                  className="w-24 h-24 rounded-md object-cover border"
+                />
+
+                <button
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 text-xs"
+                  onClick={() =>
+                    setForm((prev) => ({ ...prev, store_logo: "" }))
+                  }
+                >
+                  ✕
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

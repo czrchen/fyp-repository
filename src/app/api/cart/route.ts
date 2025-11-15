@@ -34,7 +34,13 @@ export async function GET() {
 
         });
 
-        return NextResponse.json({ items });
+        return NextResponse.json({
+            items: items.map((i) => ({
+                ...i,
+                sellerName: i.seller?.store_name ?? null,
+                sellerLogo: i.seller?.store_logo ?? null,
+            })),
+        });
     } catch (error) {
         console.error("❌ Fetch cart error:", error);
         return NextResponse.json({ error: "Failed to load cart" }, { status: 500 });

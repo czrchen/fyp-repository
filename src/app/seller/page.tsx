@@ -119,12 +119,19 @@ export default function SellerDashboard() {
       <nav className="bg-card border-b border-border">
         <div className="container mx-auto px-18">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <Store className="h-8 w-8 text-primary" />
+            <div className="flex items-center gap-3">
+              {storeLogo ? (
+                <img
+                  src={storeLogo}
+                  alt={storeName ?? "Unknown"}
+                  className="h-9 w-9 rounded-full object-cover border"
+                />
+              ) : (
+                <Store className="h-8 w-8 text-primary" />
+              )}
+
               <div>
-                <h1 className="font-bold text-foreground">
-                  {storeName || "My Store"}
-                </h1>
+                <h1 className="font-bold text-foreground">{storeName}</h1>
                 <p className="text-xs text-muted-foreground">Seller Hub</p>
               </div>
             </div>

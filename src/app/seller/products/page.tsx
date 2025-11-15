@@ -86,7 +86,7 @@ export default function SellerProductsPage() {
     <div className="min-h-screen bg-background">
       {/* Navigation */}
       <nav className="bg-card border-b border-border">
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-14">
           <div className="flex items-center h-16">
             <Link href="/seller">
               <Button variant="ghost" size="sm">

@@ -22,6 +22,7 @@ export interface CartItem {
   quantity: number;
   sellerId?: string;
   sellerName?: string;
+  sellerLogo?: string;
   product?: any; // full product object (if included from API)
   variant?: any; // full variant object (if included from API)
 }

@@ -162,7 +162,10 @@ export default function MessagesPage() {
                           {/* 🧑‍ Buyer Info */}
                           <div className="flex gap-3 items-center">
                             <Avatar>
-                              <AvatarImage src="" />
+                              <AvatarImage
+                                src={session.sellerLogo}
+                                alt={session.sellerName}
+                              />
                               <AvatarFallback>
                                 {session.sellerName?.[0] ?? "B"}
                               </AvatarFallback>
@@ -203,6 +206,10 @@ export default function MessagesPage() {
                     {/* Header */}
                     <div className="p-4 border-b border-border flex items-center gap-3 flex-shrink-0">
                       <Avatar>
+                        <AvatarImage
+                          src={activeSession.sellerLogo}
+                          alt={activeSession.sellerName}
+                        />
                         <AvatarFallback>
                           {activeSession.sellerName?.[0] ?? "B"}
                         </AvatarFallback>
