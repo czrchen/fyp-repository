@@ -83,7 +83,7 @@ export default function SellerDashboard() {
     },
     {
       label: "Revenue",
-      value: `$${(stats?.totalRevenue?.toFixed(2) ?? 0).toLocaleString()}`,
+      value: `RM${(stats?.totalRevenue?.toFixed(2) ?? 0).toLocaleString()}`,
       icon: TrendingUp,
     },
     {

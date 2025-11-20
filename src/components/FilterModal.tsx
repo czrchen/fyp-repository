@@ -123,8 +123,8 @@ export default function FilterModal() {
             <h3 className="font-medium text-sm text-foreground">Price Range</h3>
             <Slider defaultValue={[0, 1000]} max={1000} step={10} />
             <div className="flex justify-between text-sm text-muted-foreground">
-              <span>$0</span>
-              <span>$1000+</span>
+              <span>RM0</span>
+              <span>RM1000+</span>
             </div>
           </div>
 

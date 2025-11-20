@@ -5,26 +5,26 @@ import { cookies } from "next/headers";
 // ✅ POST /api/checkout
 export async function POST(req: Request) {
     try {
-        const cookieStore = await cookies();
-        const cookieString = cookieStore.toString();
+        // const cookieStore = await cookies();
+        // const cookieString = cookieStore.toString();
 
-        // ✅ Fetch current user session
-        const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
-            headers: { Cookie: cookieString },
-            cache: "no-store",
-        });
+        // // ✅ Fetch current user session
+        // const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
+        //     headers: { Cookie: cookieString },
+        //     cache: "no-store",
+        // });
 
-        if (!res.ok) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
+        // if (!res.ok) {
+        //     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        // }
 
-        const user = await res.json();
-        if (!user?.id) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
-        }
+        // const user = await res.json();
+        // if (!user?.id) {
+        //     return NextResponse.json({ error: "User not found" }, { status: 404 });
+        // }
 
         const body = await req.json();
-        const { items, addressId, paymentMethod, userSession } = body;
+        const { items, addressId, paymentMethod, userSession, userId } = body;
 
         if (!items || items.length === 0) {
             return NextResponse.json(
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
             // 1️⃣ Create the order
             const newOrder = await tx.order.create({
                 data: {
-                    userId: user.id,
+                    userId: userId,
                     addressId: addressId ?? null,
                     totalAmount,
                     paymentMethod: paymentMethod ?? "FPX",
@@ -138,7 +138,7 @@ export async function POST(req: Request) {
                     category_id: productInfo?.categoryId ?? null,
                     brandId: productInfo?.brandId ?? null,
                     price,
-                    user_id: user.id,
+                    user_id: userId,
                     user_session: userSession || "guest",
                 });
 

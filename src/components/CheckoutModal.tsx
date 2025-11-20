@@ -72,6 +72,43 @@ export default function CheckoutModal({
     0
   );
 
+  // const handleConfirm = async () => {
+  //   if (!selectedAddress) {
+  //     toast.error("Please select a delivery address");
+  //     return;
+  //   }
+
+  //   if (!payment) {
+  //     toast.error("Please select a payment method");
+  //     return;
+  //   }
+
+  //   try {
+  //     setLoading(true);
+  //     const res = await fetch("/api/checkout", {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         items: selectedItems,
+  //         addressId: selectedAddress,
+  //         paymentMethod: payment,
+  //         userSession: localStorage.getItem("sessionId") || "guest",
+  //       }),
+  //     });
+
+  //     if (!res.ok) throw new Error("Checkout failed");
+
+  //     toast.success("Order placed successfully!");
+  //     onSuccess();
+  //     onClose();
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to complete checkout. Please try again.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleConfirm = async () => {
     if (!selectedAddress) {
       toast.error("Please select a delivery address");
@@ -84,28 +121,47 @@ export default function CheckoutModal({
     }
 
     try {
-      setLoading(true);
-      const res = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      // setLoading(true);
+
+      // Get logged-in user from NextAuth using cookies
+      const resp = await fetch("/api/user/current", { cache: "no-store" });
+      const user = await resp.json();
+
+      if (!user?.id) {
+        toast.error("Please login before checkout");
+        setLoading(false);
+        return;
+      }
+
+      // Save everything needed for checkout AFTER FPX redirect
+      localStorage.setItem(
+        "checkout_data",
+        JSON.stringify({
+          userId: user.id,
           items: selectedItems,
           addressId: selectedAddress,
           paymentMethod: payment,
-          userSession: localStorage.getItem("sessionId") || "guest",
+        })
+      );
+
+      // Create FPX payment session
+      const payRes = await fetch("/api/payment/fpx/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: selectedItems.reduce(
+            (sum: number, item: any) => sum + item.price * item.quantity,
+            0
+          ),
         }),
       });
 
-      if (!res.ok) throw new Error("Checkout failed");
-
-      toast.success("Order placed successfully!");
-      onSuccess();
-      onClose();
+      const { redirectUrl } = await payRes.json();
+      window.location.href = redirectUrl;
     } catch (err) {
       console.error(err);
-      toast.error("Failed to complete checkout. Please try again.");
-    } finally {
-      setLoading(false);
+      toast.error("Failed to start payment. Please try again.");
+      setLoading(false); // only stop loading on error, success will leave page
     }
   };
 
@@ -222,9 +278,6 @@ export default function CheckoutModal({
                 <RadioGroupItem value="fpx" id="fpx" />
                 <Label htmlFor="fpx" className="flex-1 cursor-pointer">
                   <span className="font-medium block">FPX Online Banking</span>
-                  <span className="text-xs text-muted-foreground">
-                    Coming soon
-                  </span>
                 </Label>
               </div>
             </RadioGroup>

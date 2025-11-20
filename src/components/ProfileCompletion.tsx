@@ -50,12 +50,12 @@ const interestOptions = [
 ];
 
 const incomeLevels = [
-  "Under $25,000",
-  "$25,000 - $50,000",
-  "$50,000 - $75,000",
-  "$75,000 - $100,000",
-  "$100,000 - $150,000",
-  "Over $150,000",
+  "Under RM25,000",
+  "RM25,000 - RM50,000",
+  "RM50,000 - RM75,000",
+  "RM75,000 - RM100,000",
+  "RM100,000 - RM150,000",
+  "Over RM150,000",
 ];
 
 export default function ProfileCompletionModal() {

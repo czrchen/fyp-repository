@@ -443,7 +443,7 @@ export default function ProductDetail() {
                 </Badge>
               </div>
               <p className="text-sm text-green-600 font-medium">
-                ✓ Free shipping on orders over $50
+                ✓ Free shipping on orders over RM500
               </p>
             </div>
 

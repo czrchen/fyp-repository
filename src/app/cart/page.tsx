@@ -224,7 +224,7 @@ export default function CartPage() {
                               )}
 
                               <p className="text-lg font-bold text-primary mb-3">
-                                ${item.price.toFixed(2)}
+                                RM {item.price.toFixed(2)}
                               </p>
 
                               {/* Quantity controls */}
@@ -275,7 +275,7 @@ export default function CartPage() {
                             {/* Subtotal */}
                             <div className="text-right">
                               <p className="font-bold text-foreground">
-                                ${(item.price * item.quantity).toFixed(2)}
+                                RM {(item.price * item.quantity).toFixed(2)}
                               </p>
                             </div>
                           </div>
@@ -289,7 +289,7 @@ export default function CartPage() {
                     Subtotal for{" "}
                     <span className="mx-1 font-medium">{sellerName}</span>:
                     <span className="ml-2 font-semibold text-foreground">
-                      ${storeSubtotal.toFixed(2)}
+                      RM {storeSubtotal.toFixed(2)}
                     </span>
                   </div>
 
@@ -313,7 +313,7 @@ export default function CartPage() {
                       Selected Subtotal
                     </span>
                     <span className="font-medium text-foreground">
-                      ${selectedTotal.toFixed(2)}
+                      RM {selectedTotal.toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
@@ -327,7 +327,7 @@ export default function CartPage() {
                 <div className="flex justify-between">
                   <span className="font-bold text-foreground">Total</span>
                   <span className="text-2xl font-bold text-primary">
-                    ${selectedTotal.toFixed(2)}
+                    RM {selectedTotal.toFixed(2)}
                   </span>
                 </div>
                 <Button

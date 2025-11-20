@@ -155,8 +155,8 @@ function FilterContent({
         className="my-4"
       />
       <div className="flex justify-between text-sm text-muted-foreground mb-4">
-        <span>${priceRange[0]}</span>
-        <span>${priceRange[1]}</span>
+        <span>RM{priceRange[0]}</span>
+        <span>RM{priceRange[1]}</span>
       </div>
 
       <Separator className="my-4" />
