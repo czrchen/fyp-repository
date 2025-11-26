@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Sparkles,
   TrendingUp,
@@ -30,6 +30,8 @@ import heroBanner from "@/assets/hero-banner.jpg";
 
 export default function HomePage() {
   const { products, refetchProducts, productLoading } = useProducts();
+  const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
+  const [loadingRecommended, setLoadingRecommended] = useState(true);
   const { categories, isLoading } = useCategories();
   const [userLoading, setUserLoading] = useState(false);
   const { data: userSession } = useSession();
@@ -38,6 +40,9 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showLoadingModal, setShowLoadingModal] = useState(true);
   let load = 0;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
 
   // 4 rows × 4 columns = 16 products per page
   const productsPerPage = 16;
@@ -94,6 +99,53 @@ export default function HomePage() {
     }
   }, [productLoading, isLoading, userLoading]);
 
+  const checkPosition = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    setAtStart(el.scrollLeft === 0);
+    setAtEnd(el.scrollWidth - el.clientWidth - el.scrollLeft < 5);
+  };
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const amount = el.clientWidth * 0.8; // scroll 80% width
+    el.scrollBy({
+      left: dir === "left" ? -amount : amount,
+      behavior: "smooth",
+    });
+  };
+
+  useEffect(() => {
+    checkPosition();
+  }, []);
+
+  // useEffect(() => {
+  //   const fetchRecommended = async () => {
+  //     try {
+  //       setLoadingRecommended(true);
+
+  //       const res = await fetch("/api/recommend/for-you", {
+  //         method: "GET",
+  //       });
+
+  //       const data = await res.json();
+
+  //       console.log("Recommended products:", data.recommended);
+
+  //       setRecommendedProducts(data.recommended || []);
+  //     } catch (err) {
+  //       console.error("Failed to fetch recommended products:", err);
+  //     } finally {
+  //       setLoadingRecommended(false);
+  //     }
+  //   };
+
+  //   fetchRecommended();
+  // }, []);
+
   useEffect(() => {
     // Check if session ID already exists
     let sessionId = localStorage.getItem("sessionId");
@@ -146,7 +198,7 @@ export default function HomePage() {
             {/* Animated loader with glow effect */}
             <div className="relative">
               <div className="absolute inset-0 blur-xl bg-primary/30 rounded-full animate-pulse" />
-              <Loader2 className="relative h-12 w-12 animate-spin text-green-600"/>
+              <Loader2 className="relative h-12 w-12 animate-spin text-green-600" />
             </div>
 
             {/* Text content */}

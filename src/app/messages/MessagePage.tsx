@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Search, Check, CheckCheck } from "lucide-react";
 import { format, isToday, isYesterday } from "date-fns";
 import { useBuyerMessages } from "@/contexts/BuyerMessageContext"; // ✅ Import context
+import { useOrders } from "@/contexts/OrderContext";
 
 type Seller = {
   id: number;
@@ -30,6 +31,7 @@ export default function MessagesPage() {
   const [messageText, setMessageText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
+  const { orders } = useOrders();
   const [isChatbotMode, setIsChatbotMode] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const searchParams = useSearchParams();
@@ -65,11 +67,27 @@ export default function MessagesPage() {
       await sendMessage(activeSession.id, content, "buyer", true);
       setIsTyping(true);
 
+      // 🔎 Filter only orders belonging to this seller
+      const sellerOrders = orders.flatMap((order) =>
+        order.items
+          .filter((i) => i.sellerId === activeSession.sellerId)
+          .map((i) => ({
+            orderId: order.id,
+            productId: i.productId,
+            productName: i.name, // ⭐ Include product name
+            imageUrl: i.imageUrl, // ⭐ Optional
+            attributes: i.attributes,
+            status: i.status,
+            deliveredAt: i.deliveredAt,
+            estimatedDays: i.estimatedDays,
+          }))
+      );
+
       try {
         const res = await fetch(`/api/chatbot/${activeSession.sellerId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: content }),
+          body: JSON.stringify({ question: content, orders: sellerOrders }),
         });
         const data = await res.json();
         await sendMessage(activeSession.id, data.answer, "chatbot", true);

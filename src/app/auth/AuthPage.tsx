@@ -19,10 +19,12 @@ import { Separator } from "@/components/ui/separator";
 import { Store } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
+import { useProfile } from "@/contexts/ProfileContext";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { refreshProfile } = useProfile();
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "login"; // 🆕 detect ?tab=login
   const [tabValue, setTabValue] = useState(currentTab);
@@ -70,6 +72,7 @@ export default function AuthPage() {
     if (res.ok) {
       // ✅ Redirect to /auth?tab=login
       router.push("/auth?tab=login");
+      await refreshProfile();
       toast.success("Account Register Successfully! ", {
         description: `Login With Your Credentials.`,
       });
@@ -90,7 +93,7 @@ export default function AuthPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">

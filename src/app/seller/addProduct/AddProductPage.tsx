@@ -26,7 +26,7 @@ export default function AddProduct() {
   const searchParams = useSearchParams();
   const type = searchParams.get("type"); // "single" | "variant"
 
-  const { refetchSellerData } = useSeller();
+  const { sellerId, refetchSellerData } = useSeller();
   const { refetchProducts } = useProducts();
 
   // ------------------------
@@ -174,7 +174,7 @@ export default function AddProduct() {
             ? JSON.parse(formData.attributes)
             : {},
           variants: type === "variant" ? variants : [],
-          sellerId: "99fa3bc8-069c-4180-9392-16dda36469ef",
+          sellerId: sellerId,
         }),
       });
 

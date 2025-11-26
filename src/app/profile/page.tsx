@@ -196,7 +196,7 @@ const Profile = () => {
           <CardHeader>
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
               {/* 🧍 Avatar */}
-              <Avatar className="h-24 w-24 flex-shrink-0">
+              <Avatar className="h-24 w-24 shrink-0">
                 <AvatarImage
                   src={
                     localUser.avatar_url ||
@@ -245,7 +245,7 @@ const Profile = () => {
                   </div>
 
                   {/* Right: Edit Profile Button */}
-                  <div className="flex-shrink-0">
+                  <div className="shrink-0">
                     <EditProfileModal
                       user={localUser}
                       onEdited={handleEdited}
@@ -322,7 +322,7 @@ const Profile = () => {
 
         {/* Only show seller registration if not seller */}
         {!localUser.isSeller && (
-          <Card className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
+          <Card className="mb-8 bg-linear-to-r from-primary/10 to-primary/5 border-primary/20">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row items-center gap-6">
                 <div className="flex items-center gap-4 flex-1 min-w-0">

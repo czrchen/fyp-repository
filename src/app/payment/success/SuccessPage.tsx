@@ -3,10 +3,14 @@
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useCart } from "@/contexts/CartContext";
+import { useProfile } from "@/contexts/ProfileContext";
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { fetchCart } = useCart();
+  const { refreshProfile } = useProfile();
 
   useEffect(() => {
     const doCheckout = async () => {
@@ -39,6 +43,8 @@ export default function PaymentSuccessPage() {
         return;
       }
 
+      await fetchCart();
+      await refreshProfile();
       toast.success("Order created!");
 
       // Clean storage

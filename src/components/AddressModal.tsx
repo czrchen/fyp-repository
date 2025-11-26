@@ -29,6 +29,7 @@ export default function AddressModal({
   open,
   onClose,
   addressToEdit,
+  onAdded,
 }: AddressModalProps) {
   const { refreshProfile } = useProfile();
   const isEditMode = !!addressToEdit;
@@ -69,9 +70,7 @@ export default function AddressModal({
   const handleSubmit = async () => {
     try {
       const res = await fetch(
-        isEditMode
-          ? `/api/address/${addressToEdit?.id}` // PUT endpoint
-          : `/api/address`, // POST endpoint
+        isEditMode ? `/api/address/${addressToEdit?.id}` : `/api/address`,
         {
           method: isEditMode ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -81,17 +80,25 @@ export default function AddressModal({
 
       if (!res.ok) throw new Error("Failed to save address");
 
+      const savedAddress = await res.json(); // ⬅️ get new/updated data
+
       toast.success(
         isEditMode
           ? "Address updated successfully!"
           : "Address added successfully!"
       );
-      refreshProfile(); // refresh profile context or local state
+
+      // ⬅️ UPDATE UI FIRST before fetching fresh profile
+      if (!isEditMode && onAdded) {
+        onAdded(savedAddress);
+      }
+
+      refreshProfile(); // optional, but keep for consistency
+
       onClose();
     } catch (err) {
       console.error(err);
       toast.error("Something went wrong.");
-    } finally {
     }
   };
 
