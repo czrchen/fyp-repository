@@ -58,9 +58,9 @@ function extractOrderId(raw: string): string | null {
 // ✅ Route handler
 export async function POST(
     req: NextRequest,
-    { params }: { params: { sellerId: string } }
+    { params }: { params: Promise<{ sellerId: string }> }
 ) {
-    const { sellerId } = params;
+    const { sellerId } = await params;
 
     // Read body with proper typing
     const body = (await req.json()) as {
