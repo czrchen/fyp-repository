@@ -7,6 +7,13 @@ import { XCircle, ArrowLeft } from "lucide-react";
 
 export default function PaymentCancelledPage() {
   const router = useRouter();
+  const raw = localStorage.getItem("checkout_data");
+  if (!raw) {
+    return;
+  }
+
+  const checkoutData = JSON.parse(raw);
+  const returnUrl = checkoutData.returnUrl;
 
   useEffect(() => {
     localStorage.removeItem("checkout_data");
@@ -37,12 +44,12 @@ export default function PaymentCancelledPage() {
           {/* Actions */}
           <div className="space-y-3">
             <Button
-              onClick={() => router.push("/cart")}
+              onClick={() => router.push(returnUrl)}
               className="w-full"
               size="lg"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Cart
+              Back
             </Button>
 
             <Button

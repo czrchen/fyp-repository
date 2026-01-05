@@ -5,13 +5,13 @@ import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth"; // adjust to your NextAuth options file
 
-// ✅ Fetch last 5 searches for the logged-in user
+//  Fetch last 5 searches for the logged-in user
 export async function GET() {
     try {
         const cookieStore = await cookies();
         const cookieString = cookieStore.toString();
 
-        // ✅ Fetch current user session
+        //  Fetch current user session
         const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
             headers: { Cookie: cookieString },
             cache: "no-store",
@@ -34,18 +34,18 @@ export async function GET() {
 
         return NextResponse.json(items);
     } catch (error) {
-        console.error("❌ Fetch search history error:", error);
+        console.error(" Fetch search history error:", error);
         return NextResponse.json({ error: "Failed to load search history" }, { status: 500 });
     }
 }
 
-// ✅ Save a new search term for the logged-in user
+//  Save a new search term for the logged-in user
 export async function POST(req: NextRequest) {
     try {
         const cookieStore = await cookies();
         const cookieString = cookieStore.toString();
 
-        // ✅ Fetch current user session
+        //  Fetch current user session
         const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
             headers: { Cookie: cookieString },
             cache: "no-store",
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ ok: true });
     } catch (error) {
-        console.error("❌ Push History error:", error);
+        console.error(" Push History error:", error);
         return NextResponse.json({ error: "Failed to push search history" }, { status: 500 });
     }
 

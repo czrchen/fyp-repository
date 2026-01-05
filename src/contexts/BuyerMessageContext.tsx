@@ -17,6 +17,8 @@ type ChatMessage = {
   content: string;
   isRead: boolean;
   isChatbot: boolean;
+  messageType?: string;
+  payload?: any;
   createdAt: string;
 };
 
@@ -39,7 +41,9 @@ type BuyerMessageContextType = {
     sessionId: string,
     content: string,
     senderType: "buyer" | "seller" | "chatbot",
-    isChatbot: boolean
+    isChatbot: boolean,
+    messageType?: string,
+    payload?: any
   ) => Promise<void>;
   refetchSessions: () => Promise<void>;
   markSessionAsRead: (sessionId: string) => Promise<void>;
@@ -58,7 +62,7 @@ export const BuyerMessageProvider = ({ children }: { children: ReactNode }) => {
   const fetchSessions = useCallback(async () => {
     try {
       if (status !== "authenticated" || !session?.user?.id) {
-        console.log("⚠️ No active session — skipping chat fetch.");
+        console.log("No active session — skipping chat fetch.");
         setSessions([]);
         return;
       }
@@ -71,7 +75,7 @@ export const BuyerMessageProvider = ({ children }: { children: ReactNode }) => {
       const data: ChatSession[] = await res.json();
       setSessions(data.filter((s) => s.isActive));
     } catch (err) {
-      console.error("❌ Failed to fetch buyer sessions:", err);
+      console.error(" Failed to fetch buyer sessions:", err);
       setSessions([]);
     }
   }, [session, status]);
@@ -85,15 +89,20 @@ export const BuyerMessageProvider = ({ children }: { children: ReactNode }) => {
     setActive(session);
   };
 
-  // ✉️ Send new message
+  // Send new message
   const sendMessage = async (
     sessionId: string,
     content: string,
     senderType: "buyer" | "seller" | "chatbot",
-    isChatbot: boolean
+    isChatbot: boolean,
+    messageType: string = "text",
+    payload: any = null
   ) => {
-    if (!content.trim()) return;
+    // For product_list/order_list/order_detail,
+    // backend allows empty content. So skip trimming.
+    const safeContent = content ?? "";
 
+    // FRONTEND: Add message instantly to UI
     setSessions((prev: ChatSession[]) =>
       prev.map(
         (s): ChatSession =>
@@ -106,7 +115,9 @@ export const BuyerMessageProvider = ({ children }: { children: ReactNode }) => {
                     id: crypto.randomUUID(),
                     senderType,
                     senderId: "temp",
-                    content,
+                    content: safeContent,
+                    messageType,
+                    payload,
                     isRead: false,
                     isChatbot,
                     createdAt: new Date().toISOString(),
@@ -117,22 +128,30 @@ export const BuyerMessageProvider = ({ children }: { children: ReactNode }) => {
       )
     );
 
+    // BACKEND: Store message in database
     try {
       await fetch("/api/messages/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, content, senderType, isChatbot }),
+        body: JSON.stringify({
+          sessionId,
+          content: safeContent,
+          senderType,
+          isChatbot,
+          messageType,
+          payload,
+        }),
       });
     } catch (err) {
-      console.error("❌ Failed to send buyer message:", err);
+      console.error(" Failed to send message:", err);
     }
   };
 
-  // ✅ Mark messages as read instantly + update DB
+  //  Mark messages as read instantly + update DB
   const markSessionAsRead = async (sessionId: string) => {
     if (!sessionId) return;
 
-    // --- 1️⃣ Optimistic UI update (instant)
+    // --- Optimistic UI update (instant)
     setSessions((prev) =>
       prev.map((s) =>
         s.id === sessionId
@@ -147,7 +166,7 @@ export const BuyerMessageProvider = ({ children }: { children: ReactNode }) => {
       )
     );
 
-    // --- 2️⃣ Update DB
+    // --- Update DB
     try {
       const res = await fetch(`/api/messages/markAsRead/${sessionId}`, {
         method: "PATCH",
@@ -156,10 +175,10 @@ export const BuyerMessageProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (!res.ok) {
-        console.error("❌ markAsRead failed:", await res.text());
+        console.error(" markAsRead failed:", await res.text());
       }
     } catch (err) {
-      console.error("❌ Network error marking messages as read:", err);
+      console.error(" Network error marking messages as read:", err);
     }
   };
 
@@ -179,7 +198,7 @@ export const BuyerMessageProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// ✅ Custom hook
+//  Custom hook
 export const useBuyerMessages = () => {
   const context = useContext(BuyerMessageContext);
   if (!context) {

@@ -4,7 +4,7 @@ export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> } // 👈 params must be awaited
 ) {
-  const { id } = await context.params; // ✅ await it properly
+  const { id } = await context.params; //  await it properly
 
   try {
     const user = await prisma.user.findUnique({

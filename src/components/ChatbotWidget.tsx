@@ -7,7 +7,7 @@ import { MessageCircle, X } from "lucide-react";
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
 
-  // ✅ Persist open state
+  //  Persist open state
   useEffect(() => {
     const saved = sessionStorage.getItem("chatOpen");
     if (saved === "true") setIsOpen(true);
@@ -17,7 +17,7 @@ export default function ChatbotWidget() {
     sessionStorage.setItem("chatOpen", isOpen ? "true" : "false");
   }, [isOpen]);
 
-  // ✅ Load Pickaxe once and mount automatically
+  //  Load Pickaxe once and mount automatically
   useEffect(() => {
     const load = () => {
       const pickaxe = (window as any).Pickaxe;
@@ -39,7 +39,7 @@ export default function ChatbotWidget() {
 
   return (
     <>
-      {/* 💬 Floating toggle button */}
+      {/* Floating toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition z-50"
@@ -48,7 +48,7 @@ export default function ChatbotWidget() {
         {isOpen ? <X size={22} /> : <MessageCircle size={22} />}
       </button>
 
-      {/* 💭 Chat Window */}
+      {/* Chat Window */}
       <div
         className={`fixed bottom-24 right-6 w-[420px] h-[500px] bg-white shadow-2xl rounded-xl border border-gray-200 overflow-hidden z-50 transition-all duration-300 ${
           isOpen
@@ -62,7 +62,7 @@ export default function ChatbotWidget() {
         />
       </div>
 
-      {/* ✅ Load Pickaxe script globally once */}
+      {/* Load Pickaxe script globally once */}
       <Script
         src="https://studio.pickaxe.co/api/embed/bundle.js"
         strategy="afterInteractive"

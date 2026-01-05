@@ -7,7 +7,7 @@ export async function GET() {
         const cookieStore = await cookies();
         const cookieString = cookieStore.toString();
 
-        // ✅ Fetch current user session
+        //  Fetch current user session
         const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
             headers: { Cookie: cookieString },
             cache: "no-store",
@@ -22,7 +22,7 @@ export async function GET() {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // ✅ Fetch all cart items for this user
+        //  Fetch all cart items for this user
         const items = await prisma.cartItem.findMany({
             where: { userId: user.id },
             orderBy: { createdAt: "desc" },
@@ -42,7 +42,7 @@ export async function GET() {
             })),
         });
     } catch (error) {
-        console.error("❌ Fetch cart error:", error);
+        console.error(" Fetch cart error:", error);
         return NextResponse.json({ error: "Failed to load cart" }, { status: 500 });
     }
 }

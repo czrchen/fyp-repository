@@ -43,6 +43,15 @@ export default function RegisterSellerDialog({
       toast.error("Store name is required");
       return;
     }
+    if (!form.store_description.trim()) {
+      toast.error("Store description is required");
+      return;
+    }
+
+    if (!form.store_logo) {
+      toast.error("Store logo is required");
+      return;
+    }
 
     try {
       const res = await fetch(`/api/seller/register`, {

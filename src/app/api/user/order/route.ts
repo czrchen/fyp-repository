@@ -7,7 +7,7 @@ export async function GET() {
         const cookieStore = await cookies();
         const cookieString = cookieStore.toString();
 
-        // ✅ Get logged-in user
+        //  Get logged-in user
         const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
             headers: { Cookie: cookieString },
             cache: "no-store",
@@ -22,13 +22,13 @@ export async function GET() {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // ✅ Fetch orders belonging to user
         const orders = await prisma.order.findMany({
             where: { userId: user.id },
             include: {
                 items: {
                     include: {
                         product: { select: { name: true, imageUrl: true } },
+                        seller: { select: { store_name: true } },
                     },
                 },
             },
@@ -37,7 +37,7 @@ export async function GET() {
 
         return NextResponse.json({ orders });
     } catch (err) {
-        console.error("❌ Failed to fetch user orders:", err);
+        console.error(" Failed to fetch user orders:", err);
         return NextResponse.json(
             { error: "Failed to fetch orders" },
             { status: 500 }

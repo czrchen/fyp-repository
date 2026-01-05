@@ -21,7 +21,7 @@ type AddressModalProps = {
   open: boolean;
   onClose: () => void;
   addressToEdit?: AddressData | null; // if passed, it becomes "edit" mode
-  onAdded?: (newAddress: AddressData) => void; // 🧩 add this
+  onAdded?: (newAddress: AddressData) => void; //  add this
 };
 
 export default function AddressModal({
@@ -78,27 +78,35 @@ export default function AddressModal({
         }
       );
 
-      if (!res.ok) throw new Error("Failed to save address");
+      // Parse response once
+      const data = await res.json();
 
-      const savedAddress = await res.json(); // ⬅️ get new/updated data
+      if (!res.ok) {
+        // Backend validation error (e.g. Default address rule)
+        if (data?.error) {
+          toast.error(data.error);
+        } else {
+          toast.error("Failed to save address");
+        }
+        return;
+      }
 
+      // Success
       toast.success(
         isEditMode
           ? "Address updated successfully!"
           : "Address added successfully!"
       );
 
-      // ⬅️ UPDATE UI FIRST before fetching fresh profile
+      // Update UI immediately for add mode
       if (!isEditMode && onAdded) {
-        onAdded(savedAddress);
+        onAdded(data);
       }
 
-      refreshProfile(); // optional, but keep for consistency
-
+      refreshProfile(); // keep for consistency
       onClose();
     } catch (err) {
-      console.error(err);
-      toast.error("Something went wrong.");
+      toast.error("Unable to save address. Please try again.");
     }
   };
 
@@ -120,13 +128,34 @@ export default function AddressModal({
 
         <div className="space-y-3">
           <div className="grid gap-2">
-            <Label htmlFor="label">Label (e.g. Home, Office)</Label>
-            <Input
+            <Label htmlFor="label">Label</Label>
+
+            <select
               id="label"
-              value={formData.label ?? ""}
-              onChange={handleChange}
-              placeholder="Enter label"
-            />
+              name="label"
+              value={formData.label ?? "Home"}
+              onChange={(e) =>
+                handleChange({
+                  target: {
+                    id: "label",
+                    value: e.target.value,
+                  },
+                } as any)
+              }
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-60"
+            >
+              {isEditMode && (
+                <>
+                  <option value="Default">Default</option>
+                </>
+              )}
+              {/* Always show Default */}
+              <option value="Home">Home</option>
+              <option value="Office">Office</option>
+              <option value="School">School</option>
+              <option value="Others">Others</option>
+              {/* Only show other options when NOT editing */}
+            </select>
           </div>
 
           <div className="grid gap-2">

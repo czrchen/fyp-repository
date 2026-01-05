@@ -24,14 +24,25 @@ import {
   Loader2,
 } from "lucide-react";
 import { useProducts } from "@/contexts/ProductContext";
-import { useProfile } from "@/contexts/ProfileContext"; // ✅ add this
+import { useProfile } from "@/contexts/ProfileContext"; //  add this
 import ProfileCompletionModal from "@/components/ProfileCompletion";
+import { useRecommenders } from "@/contexts/RecommenderContext";
 import heroBanner from "@/assets/hero-banner.jpg";
+import { toast } from "sonner";
 
 export default function HomePage() {
+  const {
+    recommendedProducts,
+    locationProducts,
+    trendingProducts,
+    loadingRecommended,
+    loadingLocation,
+    loadingTrending,
+    refetchRecommended,
+    refetchLocation,
+    refetchTrending,
+  } = useRecommenders();
   const { products, refetchProducts, productLoading } = useProducts();
-  const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
-  const [loadingRecommended, setLoadingRecommended] = useState(true);
   const { categories, isLoading } = useCategories();
   const [userLoading, setUserLoading] = useState(false);
   const { data: userSession } = useSession();
@@ -39,63 +50,48 @@ export default function HomePage() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showLoadingModal, setShowLoadingModal] = useState(true);
-  let load = 0;
+  const load = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(false);
-
-  // 4 rows × 4 columns = 16 products per page
-  const productsPerPage = 16;
-  const totalPages = Math.ceil(products.length / productsPerPage);
-
-  // Calculate products for current page
-  const indexOfLastProduct = currentPage * productsPerPage;
-  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
-  const currentProducts = products.slice(
-    indexOfFirstProduct,
-    indexOfLastProduct
+  const [recommendedPage, setRecommendedPage] = useState(1);
+  const recommendedPerPage = 8;
+  const recommendedTotalPages = Math.ceil(
+    recommendedProducts.length / recommendedPerPage
+  );
+  const recommendedPageSlice = recommendedProducts.slice(
+    (recommendedPage - 1) * recommendedPerPage,
+    recommendedPage * recommendedPerPage
   );
 
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxPagesToShow = 5;
+  const [locationPage, setLocationPage] = useState(1);
+  const locationPerPage = 8;
+  const locationTotalPages = Math.ceil(
+    locationProducts.length / locationPerPage
+  );
+  const locationPageSlice = locationProducts.slice(
+    (locationPage - 1) * locationPerPage,
+    locationPage * locationPerPage
+  );
 
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        pages.push("...");
-        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
-      } else {
-        pages.push(1);
-        pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
-        pages.push("...");
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  };
+  const [trendingPage, setTrendingPage] = useState(1);
+  const trendingPerPage = 8;
+  const trendingTotalPages = Math.ceil(
+    trendingProducts.length / locationPerPage
+  );
+  const trendingPageSlice = trendingProducts.slice(
+    (trendingPage - 1) * trendingPerPage,
+    trendingPage * trendingPerPage
+  );
 
   useEffect(() => {
-    if (load > 0) {
-      return;
-    }
+    if (load.current > 0) return;
     const allLoaded =
       productLoading === false && isLoading === false && userLoading === false;
 
     if (allLoaded == true) {
       setShowLoadingModal(!allLoaded);
-      load += 1;
+      load.current += 1;
     }
   }, [productLoading, isLoading, userLoading]);
 
@@ -122,30 +118,6 @@ export default function HomePage() {
     checkPosition();
   }, []);
 
-  // useEffect(() => {
-  //   const fetchRecommended = async () => {
-  //     try {
-  //       setLoadingRecommended(true);
-
-  //       const res = await fetch("/api/recommend/for-you", {
-  //         method: "GET",
-  //       });
-
-  //       const data = await res.json();
-
-  //       console.log("Recommended products:", data.recommended);
-
-  //       setRecommendedProducts(data.recommended || []);
-  //     } catch (err) {
-  //       console.error("Failed to fetch recommended products:", err);
-  //     } finally {
-  //       setLoadingRecommended(false);
-  //     }
-  //   };
-
-  //   fetchRecommended();
-  // }, []);
-
   useEffect(() => {
     // Check if session ID already exists
     let sessionId = localStorage.getItem("sessionId");
@@ -160,19 +132,19 @@ export default function HomePage() {
     const fetchUser = async () => {
       setUserLoading(true);
       const res = await fetch("/api/user/current");
-      if (!res.ok) return console.error("Failed to fetch current user");
+      if (!res.ok) return toast.error("Failed to fetch current user");
 
       const data = await res.json();
       setUser(data);
       setUserLoading(false);
 
-      // ✅ Auto-open profile completion modal if incomplete
+      // Auto-open profile completion modal if incomplete
       if (!data.profile_completed) {
         setShowProfileModal(true);
       }
     };
 
-    // ✅ Only run if user session exists
+    // Only run if user session exists
     if (userSession?.user?.email) {
       fetchUser();
     }
@@ -275,14 +247,17 @@ export default function HomePage() {
         <div className="space-y-8">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <FilterModal />
-              <span className="text-sm text-muted-foreground">
-                Filter products by category and preferences
-              </span>
+              {/* <FilterModal /> */}
+              <h2 className="text-2xl font-bold mb-6 text-foreground pl-2">
+                Products You Like
+              </h2>
             </div>
             <Button
               variant="outline"
-              onClick={refetchProducts}
+              onClick={() => {
+                refetchRecommended();
+                refetchLocation();
+              }}
               className="flex items-center gap-2"
             >
               <RotateCcw size={16} /> Refresh
@@ -304,9 +279,8 @@ export default function HomePage() {
 
             <TabsContent value="recommended" className="mt-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {currentProducts
-                  .filter((p: any) => p.status === true) // 🟢 Only active products
-                  .slice(0, 8)
+                {recommendedPageSlice
+                  .filter((p: any) => p.status === true)
                   .map((p: any) => (
                     <Link
                       key={`recommended-${p.id}`}
@@ -333,51 +307,44 @@ export default function HomePage() {
               </div>
 
               {/* Pagination */}
-              {totalPages > 1 && (
+              {recommendedTotalPages > 1 && (
                 <div className="flex justify-center items-center gap-2 mt-12">
-                  {/* Previous button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      setRecommendedPage((prev) => Math.max(prev - 1, 1))
                     }
-                    disabled={currentPage === 1}
+                    disabled={recommendedPage === 1}
                     className="h-9 w-9 p-0"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
 
-                  {/* Page numbers */}
-                  {getPageNumbers().map((page, index) =>
-                    page === "..." ? (
-                      <span
-                        key={`ellipsis-${index}`}
-                        className="px-2 text-muted-foreground"
-                      >
-                        ...
-                      </span>
-                    ) : (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page as number)}
-                        className="h-9 w-9 p-0"
-                      >
-                        {page}
-                      </Button>
-                    )
-                  )}
+                  {Array.from(
+                    { length: recommendedTotalPages },
+                    (_, i) => i + 1
+                  ).map((page) => (
+                    <Button
+                      key={page}
+                      variant={recommendedPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setRecommendedPage(page)}
+                      className="h-9 w-9 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
 
-                  {/* Next button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      setRecommendedPage((prev) =>
+                        Math.min(prev + 1, recommendedTotalPages)
+                      )
                     }
-                    disabled={currentPage === totalPages}
+                    disabled={recommendedPage === recommendedTotalPages}
                     className="h-9 w-9 p-0"
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -387,9 +354,8 @@ export default function HomePage() {
             </TabsContent>
             <TabsContent value="location" className="mt-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {currentProducts
-                  .filter((p: any) => p.status === true) // 🟢 Only active products
-                  .slice(0, 8)
+                {locationPageSlice
+                  .filter((p: any) => p.status === true)
                   .map((p: any) => (
                     <Link
                       key={`location-${p.id}`}
@@ -415,51 +381,44 @@ export default function HomePage() {
                   ))}
               </div>
               {/* Pagination */}
-              {totalPages > 1 && (
+              {locationTotalPages > 1 && (
                 <div className="flex justify-center items-center gap-2 mt-12">
-                  {/* Previous button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      setLocationPage((prev) => Math.max(prev - 1, 1))
                     }
-                    disabled={currentPage === 1}
+                    disabled={locationPage === 1}
                     className="h-9 w-9 p-0"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
 
-                  {/* Page numbers */}
-                  {getPageNumbers().map((page, index) =>
-                    page === "..." ? (
-                      <span
-                        key={`ellipsis-${index}`}
-                        className="px-2 text-muted-foreground"
-                      >
-                        ...
-                      </span>
-                    ) : (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page as number)}
-                        className="h-9 w-9 p-0"
-                      >
-                        {page}
-                      </Button>
-                    )
-                  )}
+                  {Array.from(
+                    { length: locationTotalPages },
+                    (_, i) => i + 1
+                  ).map((page) => (
+                    <Button
+                      key={page}
+                      variant={locationPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setLocationPage(page)}
+                      className="h-9 w-9 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
 
-                  {/* Next button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      setLocationPage((prev) =>
+                        Math.min(prev + 1, locationTotalPages)
+                      )
                     }
-                    disabled={currentPage === totalPages}
+                    disabled={locationPage === locationTotalPages}
                     className="h-9 w-9 p-0"
                   >
                     <ChevronRight className="h-4 w-4" />
@@ -469,9 +428,8 @@ export default function HomePage() {
             </TabsContent>
             <TabsContent value="trending" className="mt-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {currentProducts
-                  .filter((p: any) => p.status === true) // 🟢 Only active products
-                  .slice(0, 8)
+                {trendingPageSlice
+                  .filter((p: any) => p.status === true)
                   .map((p: any) => (
                     <Link
                       key={`trending-${p.id}`}
@@ -497,51 +455,44 @@ export default function HomePage() {
                   ))}
               </div>
               {/* Pagination */}
-              {totalPages > 1 && (
+              {trendingTotalPages > 1 && (
                 <div className="flex justify-center items-center gap-2 mt-12">
-                  {/* Previous button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      setTrendingPage((prev) => Math.max(prev - 1, 1))
                     }
-                    disabled={currentPage === 1}
+                    disabled={trendingPage === 1}
                     className="h-9 w-9 p-0"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
 
-                  {/* Page numbers */}
-                  {getPageNumbers().map((page, index) =>
-                    page === "..." ? (
-                      <span
-                        key={`ellipsis-${index}`}
-                        className="px-2 text-muted-foreground"
-                      >
-                        ...
-                      </span>
-                    ) : (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page as number)}
-                        className="h-9 w-9 p-0"
-                      >
-                        {page}
-                      </Button>
-                    )
-                  )}
+                  {Array.from(
+                    { length: trendingTotalPages },
+                    (_, i) => i + 1
+                  ).map((page) => (
+                    <Button
+                      key={page}
+                      variant={trendingPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setTrendingPage(page)}
+                      className="h-9 w-9 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
 
-                  {/* Next button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                      setTrendingPage((prev) =>
+                        Math.min(prev + 1, trendingTotalPages)
+                      )
                     }
-                    disabled={currentPage === totalPages}
+                    disabled={trendingPage === trendingTotalPages}
                     className="h-9 w-9 p-0"
                   >
                     <ChevronRight className="h-4 w-4" />

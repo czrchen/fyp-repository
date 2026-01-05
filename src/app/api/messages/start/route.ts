@@ -24,7 +24,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "SellerId missing" }, { status: 400 });
         }
 
-        // 1️⃣ Try to find existing session
+        // Try to find existing session
         let session = await prisma.chatSession.findUnique({
             where: {
                 buyerId_sellerId: {
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
             },
         });
 
-        // 2️⃣ Create new session if none exists
+        // Create new session if none exists
         if (!session) {
             session = await prisma.chatSession.create({
                 data: {
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ success: true, sessionId: session.id });
     } catch (err) {
-        console.error("❌ Failed to start chat:", err);
+        console.error("Failed to start chat:", err);
         return NextResponse.json({ error: "Server error" }, { status: 500 });
     }
 }

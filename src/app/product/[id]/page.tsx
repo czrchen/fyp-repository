@@ -42,7 +42,7 @@ export default function ProductDetail() {
     Record<string, string>
   >({});
 
-  // ⚡ When product loads, pick default variant (if exists)
+  // When product loads, pick default variant (if exists)
   useEffect(() => {
     if (product?.variants?.length) setSelectedVariant(product.variants[0]);
   }, [product]);
@@ -65,129 +65,97 @@ export default function ProductDetail() {
   const handleAddToCart = async () => {
     if (!product) return;
 
-    // Collect selected options (could be custom or empty)
+    /* -------------------- BASIC STOCK GUARD -------------------- */
+    if (product.stock < 1 || (selectedVariant && selectedVariant.stock < 1)) {
+      toast.error("This product is out of stock.");
+      return;
+    }
+
+    /* -------------------- ATTRIBUTES -------------------- */
     const selectedAttributes =
       selectedOptions && Object.keys(selectedOptions).length > 0
         ? selectedOptions
         : null;
 
-    // 🧩 Case 1: No variants
-    if (!product.variants || product.variants.length === 0) {
+    /* -------------------- VALIDATE VARIANT -------------------- */
+    if (product.variants?.length > 0) {
+      if (!selectedVariant) {
+        toast.error("Please select a variant before adding to cart.");
+        return;
+      }
+
+      const requiredOptions = Object.keys(selectedVariant.attributes || {});
+
+      if (Object.keys(selectedOptions).length < requiredOptions.length) {
+        toast.error("Please select all options before adding to cart.");
+        return;
+      }
+    }
+
+    try {
+      /* -------------------- BACKEND FIRST -------------------- */
+      const res = await fetch("/api/cart/add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: product.id,
+          variantId: selectedVariant?.id ?? null,
+          attributes: selectedAttributes,
+          price: selectedVariant?.price ?? product.price,
+          quantity: 1,
+          image: selectedVariant?.imageUrl ?? product.imageUrl,
+          sellerId: product.seller?.id ?? product.sellerId,
+          sellerName: product.seller?.store_name ?? "",
+        }),
+      });
+
+      const data = await res.json();
+
+      /* -------------------- HANDLE STOCK ERROR -------------------- */
+      if (!res.ok) {
+        if (res.status === 400 && data?.availableStock !== undefined) {
+          toast.error(`Only ${data.availableStock} item(s) left in stock`);
+        } else {
+          toast.error("Failed to add item to cart.");
+        }
+        return;
+      }
+
+      /* -------------------- LOCAL CART SYNC -------------------- */
       addToCart({
-        id: product.id,
+        id: crypto.randomUUID(),
         productId: product.id,
-        variantId: null,
-        name: product.name,
-        price: product.price,
-        image: product.imageUrl,
+        variantId: selectedVariant?.id ?? null,
+        name: selectedVariant?.name ?? product.name,
+        price: selectedVariant?.price ?? product.price,
+        image: selectedVariant?.imageUrl ?? product.imageUrl,
         sellerId: product.seller?.id ?? product.sellerId,
         sellerName: product.seller?.store_name ?? "",
         product,
       });
 
-      // ✅ Backend sync (still includes attributes)
-      Promise.all([
-        fetch("/api/cart/add", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            productId: product.id,
-            variantId: null,
-            attributes:
-              selectedOptions && Object.keys(selectedOptions).length > 0
-                ? selectedOptions
-                : null,
-            price: product.price,
-            quantity: 1,
-            image: product.imageUrl,
-            sellerId: product.seller?.id ?? product.sellerId,
-            sellerName: product.seller?.store_name ?? "",
-          }),
-        }).then(async (res) => {
-          if (!res.ok) throw new Error("Add failed");
-          await fetchCart?.();
-        }),
-
-        // ✅ Log the event immediately
-        fetch("/api/eventlog/addCart", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            productId: product.id,
-            brandId: product.brandId,
-            categoryId: product.categoryId,
-            price: product.price,
-            userSession: localStorage.getItem("sessionId") || "guest",
-          }),
-        }),
-      ]).catch((err) => console.error("Cart or event log failed:", err));
-
-      return;
-    }
-
-    // 🧩 Case 2: Has variants
-    if (!selectedVariant) {
-      toast.error("Please select a variant before adding to cart.");
-      return;
-    }
-
-    const requiredOptions = Object.keys(selectedVariant.attributes || {});
-    const chosenOptionsCount = Object.keys(selectedOptions).length;
-    if (chosenOptionsCount < requiredOptions.length) {
-      toast.error("Please select all options before adding to cart.");
-      return;
-    }
-
-    const variantName = selectedVariant.name ?? product.name;
-
-    addToCart({
-      id: product.id,
-      productId: product.id,
-      variantId: selectedVariant.id,
-      name: variantName,
-      price: selectedVariant.price ?? product.price,
-      image: selectedVariant.imageUrl ?? product.imageUrl,
-      sellerId: product.seller?.id ?? product.sellerId,
-      sellerName: product.seller?.store_name ?? "",
-      product,
-    });
-
-    Promise.all([
-      fetch("/api/cart/add", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: product.id,
-          variantId: selectedVariant.id,
-          attributes: selectedAttributes, // ✅ even if variant exists, store what user picked
-          price: selectedVariant.price ?? product.price,
-          quantity: 1,
-          image: selectedVariant.imageUrl ?? product.imageUrl,
-          sellerId: product.seller?.id ?? product.sellerId,
-          sellerName: product.seller?.store_name ?? "",
-        }),
-      }).then(async (res) => {
-        if (!res.ok) throw new Error("Add failed");
-        await fetchCart?.();
-      }),
-
-      // ✅ Log the event immediately
-      fetch("/api/eventlog/addCart", {
+      /* -------------------- EVENT LOG -------------------- */
+      await fetch("/api/eventlog/addCart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           productId: product.id,
           brandId: product.brandId,
           categoryId: product.categoryId,
-          price: product.price,
+          price: selectedVariant?.price ?? product.price,
           userSession: localStorage.getItem("sessionId") || "guest",
         }),
-      }),
-    ]).catch((err) => console.error("Cart or event log failed:", err));
+      });
+
+      await fetchCart?.();
+      toast.success("Added to cart successfully.");
+    } catch (err) {
+      toast.error("Network error. Please try again.");
+    }
   };
 
   const activeAttributes = useMemo(() => {
-    // Case 1️⃣: If variant selected → show variant attributes
+    // Case: If variant selected → show variant attributes
     if (
       selectedVariant?.attributes &&
       Object.keys(selectedVariant.attributes).length > 0
@@ -195,12 +163,12 @@ export default function ProductDetail() {
       return selectedVariant.attributes;
     }
 
-    // Case 2️⃣: No variant → show product attributes
+    // Case: No variant → show product attributes
     if (product?.attributes && Object.keys(product.attributes).length > 0) {
       return product.attributes;
     }
 
-    // Case 3️⃣: Nothing available
+    // Case: Nothing available
     return null;
   }, [selectedVariant, product]);
 
@@ -264,7 +232,7 @@ export default function ProductDetail() {
               </h1>
 
               <div className="flex items-center gap-5 flex-wrap mt-2">
-                {/* ⭐ Star Rating */}
+                {/* Star Rating */}
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
@@ -288,26 +256,26 @@ export default function ProductDetail() {
                   </span>
                 </div>
 
-                {/* 📦 Stock */}
+                {/* Stock */}
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Package className="h-4 w-4" />
                   <span>Stock: {product.stock ?? 0}</span>
                 </div>
 
-                {/* 🛒 Sales */}
+                {/* Sales */}
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <ShoppingCart className="h-4 w-4" />
                   <span>Sold: {product.analytics?.salesCount ?? 0}</span>
                 </div>
 
-                {/* 👁 Views */}
+                {/* Views */}
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Eye className="h-4 w-4" />
                   <span>{product.analytics?.views ?? 0} views</span>
                 </div>
               </div>
 
-              {/* 🏪 Seller Box */}
+              {/* Seller Box */}
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -363,7 +331,7 @@ export default function ProductDetail() {
 
             <Separator className="my-6" />
 
-            {/* 🏷️ Select Variant Name */}
+            {/* Select Variant Name */}
             {product.variants?.length > 0 && (
               <div className="space-y-3">
                 <h4 className="text-sm font-semibold text-foreground uppercase tracking-wide">
@@ -390,7 +358,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {/* 🧩 Variant or Normal Product Options */}
+            {/*  Variant or Normal Product Options */}
             {(selectedVariant?.attributes || product?.attributes) && (
               <div className="space-y-3 mt-6">
                 <h4 className="text-sm font-semibold text-foreground uppercase tracking-wide">
@@ -542,11 +510,11 @@ export default function ProductDetail() {
                 size="lg"
                 disabled={
                   product?.variants?.length > 0
-                    ? // Case 1️⃣: Product has variants → must select variant + all its options
+                    ? // Case: Product has variants → must select variant + all its options
                       !selectedVariant ||
                       Object.keys(selectedOptions).length <
                         Object.keys(selectedVariant?.attributes || {}).length
-                    : // Case 2️⃣: Product has no variants → must select all product-level options if exist
+                    : // Case: Product has no variants → must select all product-level options if exist
                       Object.keys(product?.attributes || {}).length > 0 &&
                       Object.keys(selectedOptions).length <
                         Object.keys(product?.attributes || {}).length
@@ -594,6 +562,20 @@ export default function ProductDetail() {
                 <Link
                   key={prod.id ?? index}
                   href={`/product/${prod.id}`}
+                  onClick={() => {
+                    fetch("/api/eventlog/view", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        productId: prod.id,
+                        brandId: prod.brandId,
+                        categoryId: prod.categoryId,
+                        price: prod.price,
+                        userSession:
+                          localStorage.getItem("sessionId") || "guest",
+                      }),
+                    }).catch(() => {});
+                  }}
                   className="block transition-transform hover:scale-105 duration-200"
                 >
                   <ProductCard {...prod} />

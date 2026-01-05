@@ -14,12 +14,26 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import ImageUploader from "@/components/ImageUploader";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useSeller } from "@/contexts/SellerContext";
 import { useProducts } from "@/contexts/ProductContext";
+
+interface ProductFormData {
+  name: string;
+  description: string;
+  price: string;
+  stock: string;
+  tags: string[];
+  imageUrl: string;
+  galleryUrls: string;
+  attributes: string;
+  categoryId: string;
+  subcategoryId: string;
+  brandId: string;
+}
 
 export default function AddProduct() {
   const router = useRouter();
@@ -30,14 +44,14 @@ export default function AddProduct() {
   const { refetchProducts } = useProducts();
 
   // ------------------------
-  // 🧠 State
+  // State
   // ------------------------
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     description: "",
     price: "",
     stock: "",
-    tags: "",
+    tags: [], // ✔ no more TS error
     imageUrl: "",
     galleryUrls: "",
     attributes: "",
@@ -45,6 +59,23 @@ export default function AddProduct() {
     subcategoryId: "",
     brandId: "",
   });
+
+  const addTag = (tag: string) => {
+    if (!tag.trim()) return;
+    if (formData.tags.includes(tag)) return;
+
+    setFormData({
+      ...formData,
+      tags: [...formData.tags, tag],
+    });
+  };
+
+  const removeTag = (t: string) => {
+    setFormData({
+      ...formData,
+      tags: formData.tags.filter((x) => x !== t),
+    });
+  };
 
   const [variants, setVariants] = useState<
     {
@@ -70,7 +101,7 @@ export default function AddProduct() {
   const [showSubList, setShowSubList] = useState(false);
 
   // ------------------------
-  // 🧩 Fetch categories
+  //  Fetch categories
   // ------------------------
   useEffect(() => {
     const fetchMainCategories = async () => {
@@ -79,7 +110,7 @@ export default function AddProduct() {
         const data = await res.json();
         setCategories(data);
       } catch (err) {
-        console.error("Failed to load categories", err);
+        toast.error(`Failed to load categories: ${err}`);
       }
     };
     fetchMainCategories();
@@ -154,7 +185,7 @@ export default function AddProduct() {
   };
 
   // ------------------------
-  // 🧩 Submit handler
+  //  Submit handler
   // ------------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,7 +197,7 @@ export default function AddProduct() {
           ...formData,
           price: parseFloat(formData.price),
           stock: parseInt(formData.stock) || 0,
-          tags: formData.tags.split(",").map((t) => t.trim()),
+          tags: formData.tags,
           galleryUrls: formData.galleryUrls
             ? formData.galleryUrls.split(",").map((u) => u.trim())
             : [],
@@ -191,7 +222,7 @@ export default function AddProduct() {
   };
 
   // ------------------------
-  // 🧩 Render
+  //  Render
   // ------------------------
   return (
     <div className="min-h-screen bg-background">
@@ -478,7 +509,7 @@ export default function AddProduct() {
                                 key={attrIndex}
                                 className="p-3 border rounded-md bg-card/50 space-y-2"
                               >
-                                {/* 🏷️ Attribute Name */}
+                                {/* Attribute Name */}
                                 <div className="flex items-center gap-2">
                                   <Input
                                     placeholder="Attribute name (e.g. Color)"
@@ -521,7 +552,7 @@ export default function AddProduct() {
                                   </Button>
                                 </div>
 
-                                {/* 🎨 Attribute Options */}
+                                {/* Attribute Options */}
                                 <div className="flex flex-wrap gap-2">
                                   {Array.isArray(attrValues)
                                     ? attrValues.map((val, optionIndex) => (
@@ -561,7 +592,7 @@ export default function AddProduct() {
                                     : null}
                                 </div>
 
-                                {/* ➕ Add New Option */}
+                                {/* Add New Option */}
                                 <div className="flex gap-2">
                                   <Input
                                     placeholder={`Add option for ${
@@ -635,7 +666,7 @@ export default function AddProduct() {
                             )
                           )}
 
-                          {/* ➕ Add New Attribute */}
+                          {/* Add New Attribute */}
                           <Button
                             type="button"
                             variant="outline"
@@ -793,7 +824,7 @@ export default function AddProduct() {
                         key={index}
                         className="p-4 border rounded-md space-y-3 bg-muted/30"
                       >
-                        {/* 🏷️ Attribute Label */}
+                        {/* Attribute Label */}
                         <div className="flex items-center gap-2">
                           <Input
                             placeholder="Attribute name (e.g. Color)"
@@ -832,7 +863,7 @@ export default function AddProduct() {
                           </Button>
                         </div>
 
-                        {/* 🎨 Attribute Options */}
+                        {/* Attribute Options */}
                         <div className="flex flex-wrap gap-2">
                           {Array.isArray(attrValues)
                             ? attrValues.map((val, valIndex) => (
@@ -865,7 +896,7 @@ export default function AddProduct() {
                             : null}
                         </div>
 
-                        {/* ➕ Add New Option */}
+                        {/*  Add New Option */}
                         <div className="flex gap-2">
                           <Input
                             placeholder={`Add option for ${
@@ -929,7 +960,7 @@ export default function AddProduct() {
                       </div>
                     ))}
 
-                    {/* ➕ Add New Attribute */}
+                    {/* Add New Attribute */}
                     <Button
                       type="button"
                       variant="outline"
@@ -954,6 +985,35 @@ export default function AddProduct() {
                   </div>
                 </>
               )}
+
+              {/* Tags */}
+              <div>
+                <Label className="mb-1">Tags</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {formData.tags.map((tag: any, i: any) => (
+                    <span
+                      key={i}
+                      className="flex items-center bg-gray-100 rounded-full px-3 py-1 text-sm"
+                    >
+                      {tag}
+                      <X
+                        className="ml-2 h-3 w-3 cursor-pointer"
+                        onClick={() => removeTag(tag)}
+                      />
+                    </span>
+                  ))}
+                </div>
+                <Input
+                  placeholder="Press Enter to add tag"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addTag(e.currentTarget.value.trim());
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                />
+              </div>
 
               {/* Description */}
               <div className="space-y-2">

@@ -22,7 +22,7 @@ export default function FilterSidebar({
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
 
-  // ✅ Only render after hydration
+  //  Only render after hydration
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -131,7 +131,7 @@ export default function FilterSidebar({
   );
 }
 
-// ✅ Shared content subcomponent
+//  Shared content subcomponent
 function FilterContent({
   priceRange,
   setPriceRange,

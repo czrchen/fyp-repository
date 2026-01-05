@@ -11,7 +11,7 @@ import axios from "axios";
 
 import { useSession } from "next-auth/react";
 
-// 🧠 Type definitions
+// Type definitions
 type FAQItem = {
   id: string;
   question: string;
@@ -48,11 +48,11 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
   const [chatbot, setChatbot] = useState<ChatbotData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🔁 Fetch seller chatbot data (from Prisma-backed API)
+  // Fetch seller chatbot data (from Prisma-backed API)
   const fetchChatbot = useCallback(async () => {
     try {
       if (status !== "authenticated" || !session?.user?.id) {
-        console.log("⚠️ No active session — skipping chatbot fetch.");
+        console.log("No active session — skipping chatbot fetch.");
         return;
       }
       setIsLoading(true);
@@ -71,11 +71,11 @@ export function ChatbotProvider({ children }: { children: React.ReactNode }) {
           faqs: formattedFaqs || [],
         });
       } else {
-        console.warn("⚠️ No chatbot found for this seller.");
+        console.warn("No chatbot found for this seller.");
         setChatbot(null);
       }
     } catch (error) {
-      console.error("❌ Failed to fetch chatbot:", error);
+      console.error(" Failed to fetch chatbot:", error);
       setChatbot(null);
     } finally {
       setIsLoading(false);

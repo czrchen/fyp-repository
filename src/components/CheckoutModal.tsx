@@ -19,24 +19,40 @@ import {
   ChevronRight,
   AlertCircle,
 } from "lucide-react";
+import { useBuyerMessages } from "@/contexts/BuyerMessageContext";
+import { se } from "date-fns/locale";
+import { useCart } from "@/contexts/CartContext";
 
 export default function CheckoutModal({
   open,
   onClose,
   selectedItems,
   onSuccess,
+  returnUrl,
+  checkoutCart,
 }: {
   open: boolean;
   onClose: () => void;
   selectedItems: any[];
   onSuccess: () => void;
+  returnUrl?: string;
+  checkoutCart: boolean;
 }) {
+  const { fetchCart } = useCart();
   const [addresses, setAddresses] = useState<any[]>([]);
   const { data: userSession } = useSession();
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [payment, setPayment] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchingAddress, setFetchingAddress] = useState(true);
+  const { sessions } = useBuyerMessages();
+
+  function findSessionIdBySeller(sellerName: string) {
+    const session = sessions.find(
+      (s) => s.sellerName?.toLowerCase() === sellerName.toLowerCase()
+    );
+    return session?.id ?? null;
+  }
 
   useEffect(() => {
     const fetchAddress = async () => {
@@ -71,7 +87,6 @@ export default function CheckoutModal({
     (sum, item) => sum + (item.price * item.quantity || 0),
     0
   );
-
   // const handleConfirm = async () => {
   //   if (!selectedAddress) {
   //     toast.error("Please select a delivery address");
@@ -133,6 +148,34 @@ export default function CheckoutModal({
         return;
       }
 
+      const validateRes = await fetch("/api/checkout/validation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: selectedItems.map((item: any) => ({
+            productId: item.productId,
+            variantId: item.variantId ?? null,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      if (!validateRes.ok) {
+        const data = await validateRes.json();
+        toast.error(
+          data?.error === "Insufficient stock"
+            ? "Some items are no longer available. Please review your cart."
+            : "Unable to validate stock. Please try again."
+        );
+        fetchCart();
+        return;
+      }
+
+      const activeSessionId = findSessionIdBySeller(
+        selectedItems[0].sellerName
+      );
+
+      console.log("Active Session Id; ", activeSessionId);
       // Save everything needed for checkout AFTER FPX redirect
       localStorage.setItem(
         "checkout_data",
@@ -141,6 +184,9 @@ export default function CheckoutModal({
           items: selectedItems,
           addressId: selectedAddress,
           paymentMethod: payment,
+          returnUrl: returnUrl,
+          checkoutCart: checkoutCart,
+          sessionId: activeSessionId,
         })
       );
 

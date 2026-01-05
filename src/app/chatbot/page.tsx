@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
 type FAQ = { question: string; answer: string };
 
@@ -28,9 +29,9 @@ export default function ChatbotSetupPage() {
         body: JSON.stringify({ sellerId, faqs, storeDescription }),
       });
       const data = await res.json();
-      alert(data.message ?? "Saved");
+      toast.success(data.message ?? "Saved");
     } catch {
-      alert("Failed to save chatbot");
+      toast.error("Failed to save chatbot");
     } finally {
       setSaving(false);
     }

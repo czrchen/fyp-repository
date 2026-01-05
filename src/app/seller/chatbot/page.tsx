@@ -24,7 +24,7 @@ export default function ChatbotManagement() {
   const [newFaq, setNewFaq] = useState({ question: "", answer: "" });
   const [isSaving, setIsSaving] = useState(false);
 
-  // 🧱 Fallback chatbot template for new users
+  // Fallback chatbot template for new users
   const emptyChatbot = {
     id: -1,
     sellerId: "",
@@ -32,7 +32,7 @@ export default function ChatbotManagement() {
     faqs: [],
   };
 
-  // 🕓 Loading state
+  // Loading state
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center text-muted-foreground">
@@ -41,12 +41,12 @@ export default function ChatbotManagement() {
     );
   }
 
-  // 🧠 Use either existing chatbot or a blank template
+  // Use either existing chatbot or a blank template
   const currentChatbot = chatbot ?? emptyChatbot;
-  const MAX_FAQS = 10;
+  const MAX_FAQS = 20;
   const remainingSlots = MAX_FAQS - (currentChatbot.faqs?.length ?? 0);
 
-  // 🧠 Update store description in context
+  // Update store description in context
   const handleDescriptionChange = (value: string) => {
     setChatbot((prev) =>
       prev
@@ -55,7 +55,7 @@ export default function ChatbotManagement() {
     );
   };
 
-  // ➕ Add new FAQ
+  // Add new FAQ
   const handleAddFaq = () => {
     if (!newFaq.question || !newFaq.answer) {
       toast.error("Please fill in both question and answer");
@@ -78,7 +78,7 @@ export default function ChatbotManagement() {
     toast.success("FAQ added successfully!");
   };
 
-  // ❌ Delete FAQ
+  //  Delete FAQ
   const handleDeleteFaq = (id: string) => {
     setChatbot((prev) =>
       prev ? { ...prev, faqs: prev.faqs.filter((f) => f.id !== id) } : prev
@@ -86,7 +86,7 @@ export default function ChatbotManagement() {
     toast.info("FAQ removed successfully");
   };
 
-  // 💾 Save chatbot to DB (create or update)
+  // Save chatbot to DB (create or update)
   const handleSaveChatbot = async () => {
     setIsSaving(true);
     try {
@@ -117,7 +117,7 @@ export default function ChatbotManagement() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* 🧭 Navigation Bar */}
+      {/* Navigation Bar */}
       <nav className="bg-card border-b border-border">
         <div className="container mx-auto px-14">
           <div className="flex items-center h-16">
@@ -142,7 +142,7 @@ export default function ChatbotManagement() {
           </p>
         </div>
 
-        {/* 🏪 Store Description */}
+        {/* Store Description */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Store Description</CardTitle>
@@ -160,7 +160,7 @@ export default function ChatbotManagement() {
           </CardContent>
         </Card>
 
-        {/* ℹ️ Info Alert */}
+        {/* Info Alert */}
         <Alert className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -169,7 +169,7 @@ export default function ChatbotManagement() {
           </AlertDescription>
         </Alert>
 
-        {/* ➕ Add New FAQ */}
+        {/* Add New FAQ */}
         <Card className="mb-6">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -223,7 +223,7 @@ export default function ChatbotManagement() {
           </CardContent>
         </Card>
 
-        {/* 📋 Existing FAQs */}
+        {/* Existing FAQs */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle>Your FAQs ({currentChatbot.faqs.length})</CardTitle>
@@ -267,7 +267,7 @@ export default function ChatbotManagement() {
           </CardContent>
         </Card>
 
-        {/* 💾 Save All Changes */}
+        {/* Save All Changes */}
         <div className="flex justify-end">
           <Button onClick={handleSaveChatbot} disabled={isSaving}>
             <Save className="mr-2 h-4 w-4" />

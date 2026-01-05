@@ -31,7 +31,7 @@ export async function POST(req: Request) {
             userSession,
         } = body;
 
-        // ✅ Basic validation
+        //  Basic validation
         if (!productId || (!userSession)) {
             return NextResponse.json(
                 { error: "Missing required fields: productId or user info" },
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
             );
         }
 
-        // 🧩 Get product info (to update seller performance)
+        // Get product info (to update seller performance)
         const product = await prisma.product.findUnique({
             where: { id: productId },
             select: { sellerId: true },
@@ -52,14 +52,14 @@ export async function POST(req: Request) {
             );
         }
 
-        // ✅ Start transaction: insert event + update analytics
+        //  Start transaction: insert event + update analytics
         await prisma.$transaction(async (tx) => {
-            // 1️⃣ Insert EventLog
+            // Insert EventLog
             await tx.eventLog.create({
                 data: {
                     event_time: new Date(),
                     event_type: "view",
-                    product_id: productId, // ✅ camelCase
+                    product_id: productId, //  camelCase
                     category_id: categoryId || null,
                     brandId: brandId || null,
                     price: price || 0,
@@ -68,14 +68,14 @@ export async function POST(req: Request) {
                 },
             });
 
-            // 2️⃣ ProductAnalytics
+            // ProductAnalytics
             await tx.productAnalytics.upsert({
                 where: { productId },
                 update: { views: { increment: 1 } },
                 create: { productId, views: 1 },
             });
 
-            // 3️⃣ SellerPerformance
+            // SellerPerformance
             await tx.sellerPerformance.upsert({
                 where: { sellerId: product.sellerId },
                 update: { totalViews: { increment: 1 } },

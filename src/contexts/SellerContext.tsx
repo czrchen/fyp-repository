@@ -37,6 +37,7 @@ type SellerOrderItem = {
   variant?: any;
   rating: number;
   feedback: string;
+  estimatedDays?: number;
 };
 
 type SellerOrderGroup = {
@@ -133,7 +134,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
       // Refresh product context
       await refetchProducts();
     } catch (error) {
-      console.error("❌ Failed to fetch seller data:", error);
+      console.error(" Failed to fetch seller data:", error);
       setStats(null);
       setOrderItems([]);
       setOrders([]);
@@ -169,7 +170,7 @@ export function SellerProvider({ children }: { children: React.ReactNode }) {
       // Refresh product context
       await refetchProducts();
     } catch (error) {
-      console.error("❌ Failed to fetch seller data:", error);
+      console.error(" Failed to fetch seller data:", error);
       setStats(null);
       setOrderItems([]);
       setOrders([]);

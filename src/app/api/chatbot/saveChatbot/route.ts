@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 export async function POST(req: Request) {
     try {
-        // 1️⃣ Get current user from /api/user/current
+        // Get current user from /api/user/current
         const cookieStore = await cookies();
         const cookieString = cookieStore.toString();
         const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
@@ -16,10 +16,10 @@ export async function POST(req: Request) {
         const user = await res.json();
         if (!user?.id) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-        // 2️⃣ Find or create Seller record
+        // Find or create Seller record
         let seller = await prisma.seller.findUnique({ where: { userId: user.id } });
         if (!seller) {
-            // 👇 Auto-create a seller profile if missing (for Google users, etc.)
+            // Auto-create a seller profile if missing (for Google users, etc.)
             seller = await prisma.seller.create({
                 data: {
                     userId: user.id,
@@ -29,10 +29,10 @@ export async function POST(req: Request) {
             });
         }
 
-        // 3️⃣ Parse request body
+        // Parse request body
         const { faqs, storeDescription } = await req.json();
 
-        // 4️⃣ Create or update the chatbot
+        // Create or update the chatbot
         const chatbot = await prisma.sellerChatbot.upsert({
             where: { sellerId: seller.id },
             update: {
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json(chatbot);
     } catch (error) {
-        console.error("❌ Error saving chatbot:", error);
+        console.error(" Error saving chatbot:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

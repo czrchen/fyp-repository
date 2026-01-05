@@ -20,6 +20,7 @@ import { Store } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
 import { useProfile } from "@/contexts/ProfileContext";
+import { el } from "date-fns/locale";
 
 export default function AuthPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -28,13 +29,57 @@ export default function AuthPage() {
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "login"; // 🆕 detect ?tab=login
   const [tabValue, setTabValue] = useState(currentTab);
+  const [isEmailError, setisEmailError] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [isPasswordError, setisPasswordError] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
-  // 🧠 Keep tab in sync with URL changes (so router.push works)
+  // Keep tab in sync with URL changes (so router.push works)
   useEffect(() => {
     setTabValue(currentTab);
   }, [currentTab]);
 
-  // ✅ LOGIN
+  // EMAIL VALIDATION
+  const validateEmail = (value: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(value)) {
+      setEmailError("Please enter a valid email format.");
+      setisEmailError(true);
+    } else {
+      setEmailError("");
+      setisEmailError(false);
+    }
+  };
+
+  // PASSWORD VALIDATION
+  const validatePassword = (value: string) => {
+    const minLength = value.length >= 8;
+    const hasUppercase = /[A-Z]/.test(value);
+    const hasNumber = /[0-9]/.test(value);
+
+    let errorMessage = "";
+
+    if (!minLength) {
+      errorMessage += "Password must be at least 8 characters long.\n";
+    }
+    if (!hasUppercase) {
+      errorMessage += "Password must include at least one uppercase letter.\n";
+    }
+    if (!hasNumber) {
+      errorMessage += "Password must include at least one number.\n";
+    }
+
+    if (errorMessage) {
+      setPasswordError(errorMessage.trim());
+      setisPasswordError(true);
+    } else {
+      setPasswordError("");
+      setisPasswordError(false);
+    }
+  };
+
+  //  LOGIN
   const handleLoginSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -50,10 +95,10 @@ export default function AuthPage() {
 
     setIsLoading(false);
     if (res?.ok) router.push("/");
-    else alert("Invalid email or password");
+    else toast.error("Invalid email or password");
   };
 
-  // ✅ REGISTER
+  //  REGISTER
   const handleRegisterSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -70,23 +115,23 @@ export default function AuthPage() {
 
     setIsLoading(false);
     if (res.ok) {
-      // ✅ Redirect to /auth?tab=login
+      //  Redirect to /auth?tab=login
       router.push("/auth?tab=login");
       await refreshProfile();
       toast.success("Account Register Successfully! ", {
         description: `Login With Your Credentials.`,
       });
     } else {
-      alert("Registration failed");
+      toast.error("Registration failed");
     }
   };
 
-  // ✅ GOOGLE
+  //  GOOGLE
   const handleGoogleSubmit = async () => {
     await signIn("google", { callbackUrl: "/" });
   };
 
-  // 🧭 Handle tab switching manually (so URL updates)
+  // Handle tab switching manually (so URL updates)
   const handleTabChange = (value: string) => {
     setTabValue(value);
     router.replace(`/auth?tab=${value}`); // URL sync
@@ -111,7 +156,7 @@ export default function AuthPage() {
         </CardHeader>
 
         <CardContent>
-          {/* 🧠 Tab state now linked with URL */}
+          {/* Tab state now linked with URL */}
           <Tabs
             value={tabValue}
             onValueChange={handleTabChange}
@@ -125,7 +170,7 @@ export default function AuthPage() {
             {/* LOGIN TAB */}
             <TabsContent value="login">
               <form onSubmit={handleLoginSubmit} className="space-y-6">
-                {/* 🔹 Google Sign-In Button */}
+                {/*  Google Sign-In Button */}
                 <Button
                   type="button"
                   variant="outline"
@@ -137,7 +182,7 @@ export default function AuthPage() {
                   <span className="font-medium">Continue with Google</span>
                 </Button>
 
-                {/* 🔹 Separator with text */}
+                {/*  Separator with text */}
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <Separator />
@@ -149,7 +194,7 @@ export default function AuthPage() {
                   </div>
                 </div>
 
-                {/* 🔹 Email & Password Fields */}
+                {/*  Email & Password Fields */}
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-sm font-medium">
@@ -188,7 +233,7 @@ export default function AuthPage() {
                   </div>
                 </div>
 
-                {/* 🔹 Submit Button */}
+                {/*  Submit Button */}
                 <Button
                   type="submit"
                   className="w-full mt-2 py-5 font-semibold"
@@ -224,6 +269,7 @@ export default function AuthPage() {
                   </div>
                 </div>
 
+                {/* FULL NAME */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
@@ -235,6 +281,7 @@ export default function AuthPage() {
                   />
                 </div>
 
+                {/* EMAIL */}
                 <div className="space-y-2">
                   <Label htmlFor="register-email">Email</Label>
                   <Input
@@ -243,9 +290,14 @@ export default function AuthPage() {
                     type="email"
                     placeholder="your@email.com"
                     required
+                    onChange={(e) => validateEmail(e.target.value)}
                   />
+                  {emailError && (
+                    <p className="text-red-500 text-sm">{emailError}</p>
+                  )}
                 </div>
 
+                {/* PASSWORD */}
                 <div className="space-y-2">
                   <Label htmlFor="register-password">Password</Label>
                   <Input
@@ -253,10 +305,20 @@ export default function AuthPage() {
                     name="register-password"
                     type="password"
                     required
+                    onChange={(e) => validatePassword(e.target.value)}
                   />
+                  {passwordError && (
+                    <p className="text-red-500 text-sm whitespace-pre-line">
+                      {passwordError}
+                    </p>
+                  )}
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading || isEmailError || isPasswordError}
+                >
                   {isLoading ? "Creating account..." : "Create Account"}
                 </Button>
               </form>

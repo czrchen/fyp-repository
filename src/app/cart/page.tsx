@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { useCart } from "@/contexts/CartContext";
@@ -14,12 +14,27 @@ import CheckoutModal from "@/components/CheckoutModal";
 import { toast } from "sonner";
 
 export default function CartPage() {
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
   const { items, removeFromCart, updateQuantity, totalItems, fetchCart } =
     useCart();
-  const { refetchProducts } = useProducts();
+  const { products, refetchProducts } = useProducts();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
-  // 🧠 Group items by store name
+  const productStockMap = new Map<string, number>();
+  const variantStockMap = new Map<string, number>();
+
+  products.forEach((p: any) => {
+    productStockMap.set(p.id, p.stock);
+
+    p.variants?.forEach((v: any) => {
+      variantStockMap.set(v.id, v.stock);
+    });
+  });
+
+  // Group items by store name
   const groupedItems = items.reduce((groups, item) => {
     const key = item.sellerName || "Unknown Store";
     if (!groups[key]) groups[key] = [];
@@ -29,14 +44,25 @@ export default function CartPage() {
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
 
-  // ✅ Toggle individual product
+  const hasOutOfStock = items
+    .filter((item) => selectedItems.includes(item.id))
+    .some((item) => {
+      const stock = item.variantId
+        ? variantStockMap.get(item.variantId)
+        : productStockMap.get(item.productId);
+      return !stock || stock < item.quantity;
+    });
+
+  //  Toggle individual product
   const toggleItem = (key: string) => {
     setSelectedItems((prev) =>
       prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]
     );
   };
 
-  // ✅ Toggle an entire store group
+  console.log("Cart Items:", items);
+
+  //  Toggle an entire store group
   const toggleStore = (storeItems: typeof items) => {
     const allSelected = storeItems.every((item) =>
       selectedItems.includes(item.id)
@@ -56,12 +82,12 @@ export default function CartPage() {
     }
   };
 
-  // 🧮 Selected subtotal
+  // Selected subtotal
   const selectedTotal = items
     .filter((item) => selectedItems.includes(item.id))
     .reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  // 🗑️ Backend sync for item removal
+  // Backend sync for item removal
   const handleRemoveItem = async (cartItemId: string) => {
     try {
       const res = await fetch(`/api/cart/delete?id=${cartItemId}`, {
@@ -71,10 +97,9 @@ export default function CartPage() {
       if (!res.ok) throw new Error("Failed to delete");
 
       removeFromCart(cartItemId);
-      await fetchCart(); // ✅ re-sync after successful deletion
+      await fetchCart(); //  re-sync after successful deletion
     } catch (err) {
       toast.error("Failed to remove item from server");
-      console.error("❌ /api/cart/delete error:", err);
     }
   };
 
@@ -91,10 +116,9 @@ export default function CartPage() {
       if (!res.ok) throw new Error("Failed to update cart");
 
       updateQuantity(cartItemId, newQty);
-      await fetchCart(); // ✅ optional re-sync
+      await fetchCart(); //  optional re-sync
     } catch (err) {
       toast.error("Failed to update cart on server");
-      console.error("❌ PATCH /api/cart/update error:", err);
     }
   };
 
@@ -132,7 +156,7 @@ export default function CartPage() {
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* 🏪 Cart Items (Grouped by store) */}
+          {/* Cart Items (Grouped by store) */}
           <div className="lg:col-span-2 space-y-8">
             {Object.entries(groupedItems).map(([sellerName, storeItems]) => {
               const storeSubtotal = storeItems.reduce(
@@ -146,7 +170,7 @@ export default function CartPage() {
 
               return (
                 <div key={sellerName} className="space-y-3">
-                  {/* 🏪 Store header */}
+                  {/* Store header */}
                   <div className="flex items-center gap-3 mb-2">
                     {/* Store checkbox */}
                     <input
@@ -175,16 +199,23 @@ export default function CartPage() {
                     </h2>
                   </div>
 
-                  {/* 🛍 Items under this store */}
+                  {/*  Items under this store */}
                   {storeItems.map((item) => {
                     const uniqueKey = item.id;
                     const isSelected = selectedItems.includes(uniqueKey);
+
+                    const availableStock = item.variantId
+                      ? variantStockMap.get(item.variantId)
+                      : productStockMap.get(item.productId);
+
+                    const safeStock =
+                      typeof availableStock === "number" ? availableStock : 0;
 
                     return (
                       <Card key={item.id}>
                         <CardContent className="p-4">
                           <div className="flex gap-4 items-center">
-                            {/* ✅ Checkbox per item */}
+                            {/* Checkbox per item */}
                             <input
                               type="checkbox"
                               checked={isSelected}
@@ -257,9 +288,16 @@ export default function CartPage() {
                                         item.quantity + 1
                                       )
                                     }
+                                    disabled={item.quantity >= safeStock}
                                   >
                                     <Plus className="h-4 w-4" />
                                   </Button>
+                                  {item.quantity >= safeStock &&
+                                    safeStock > 0 && (
+                                      <p className="text-xs text-red-500 mt-1 mx-3">
+                                        Maximum available stock reached
+                                      </p>
+                                    )}
                                 </div>
 
                                 <Button
@@ -270,6 +308,18 @@ export default function CartPage() {
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                               </div>
+
+                              <p
+                                className={`text-sm ${
+                                  safeStock > 0
+                                    ? "text-green-600"
+                                    : "text-red-600"
+                                }`}
+                              >
+                                {safeStock > 0
+                                  ? `Stock available: ${safeStock}`
+                                  : "Out of stock"}
+                              </p>
                             </div>
 
                             {/* Subtotal */}
@@ -299,7 +349,7 @@ export default function CartPage() {
             })}
           </div>
 
-          {/* 🧾 Order Summary */}
+          {/*  Order Summary */}
           <div>
             <Card className="sticky top-20">
               <CardContent className="p-6 space-y-4">
@@ -333,8 +383,8 @@ export default function CartPage() {
                 <Button
                   className="w-full"
                   size="lg"
-                  disabled={selectedItems.length === 0}
-                  onClick={() => setCheckoutOpen(true)} // ✅ must exist
+                  disabled={selectedItems.length === 0 || hasOutOfStock}
+                  onClick={() => setCheckoutOpen(true)} //  must exist
                 >
                   Proceed to Checkout
                 </Button>
@@ -343,6 +393,11 @@ export default function CartPage() {
                     Continue Shopping
                   </Button>
                 </Link>
+                {hasOutOfStock && (
+                  <p className="text-sm text-red-500 text-center">
+                    Some selected items exceed available stock
+                  </p>
+                )}
               </CardContent>
             </Card>
             <CheckoutModal
@@ -351,6 +406,8 @@ export default function CartPage() {
               selectedItems={items.filter((item) =>
                 selectedItems.includes(item.id)
               )}
+              checkoutCart={true}
+              returnUrl="/cart"
               onSuccess={async () => {
                 await fetchCart();
                 await refetchProducts();

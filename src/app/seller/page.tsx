@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSeller } from "@/contexts/SellerContext"; // ✅ import the context
+import { useSeller } from "@/contexts/SellerContext"; //  import the context
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -93,29 +93,10 @@ export default function SellerDashboard() {
     },
   ];
 
-  const handleImport = async () => {
-    try {
-      const res = await fetch("/api/importProduct", {
-        method: "POST",
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        console.log(`✅ Successfully imported ${data.inserted} products!`);
-      } else {
-        console.log(`❌ Failed: ${data.error || "Something went wrong"}`);
-      }
-    } catch (err) {
-      console.error(err);
-      console.log("⚠️ Import failed. Check console or API logs.");
-    } finally {
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ✅ Seller Navigation */}
+      {/* Seller Navigation */}
       <nav className="bg-card border-b border-border">
         <div className="container mx-auto px-18">
           <div className="flex items-center justify-between h-16">
@@ -141,10 +122,10 @@ export default function SellerDashboard() {
                   View Storefront
                 </Button>
               </Link>
-              <Button variant="ghost" size="sm" onClick={handleImport}>
+              {/* <Button variant="ghost" size="sm" onClick={handleImport}>
                 handleImport
-              </Button>
-              <Link href="/" passHref>
+              </Button> */}
+              {/* <Link href="/" passHref>
                 <Button
                   variant="secondary"
                   className="bg-black text-white font-medium hover:bg-gray-800 hover:scale-105 transition-all duration-300 ease-in-out cursor-pointer"
@@ -152,16 +133,16 @@ export default function SellerDashboard() {
                 >
                   ShopHub
                 </Button>
-              </Link>
-              <Button variant="ghost" size="icon">
+              </Link> */}
+              {/* <Button variant="ghost" size="icon">
                 <Settings className="h-5 w-5" />
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
       </nav>
 
-      {/* ✅ Page Body */}
+      {/* Page Body */}
       <div className="container mx-auto px-18 py-8">
         {/* Quick Actions */}
         <div className="mb-8 flex gap-3 flex-wrap">
@@ -181,7 +162,7 @@ export default function SellerDashboard() {
               </Link>
               <Link href="/seller/addProduct?type=variant" passHref>
                 <DropdownMenuItem className="cursor-pointer">
-                  🧩 Add Product with Variants
+                  Add Product with Variants
                 </DropdownMenuItem>
               </Link>
             </DropdownMenuContent>
@@ -230,7 +211,7 @@ export default function SellerDashboard() {
           })}
         </div>
 
-        {/* ✅ Real Products Section */}
+        {/* Real Products Section */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -256,8 +237,8 @@ export default function SellerDashboard() {
                     key={p.id}
                     {...p}
                     imageUrl={p.imageUrl ?? undefined}
-                    sellerName={storeName || ""} // ✅ FIX ADDED
-                    sellerId={sellerId || ""} // ✅ ensures ProductCard gets sellerId
+                    sellerName={storeName || ""} //  FIX ADDED
+                    sellerId={sellerId || ""} //  ensures ProductCard gets sellerId
                     mode="seller"
                     onUpdated={(updated) => {
                       setLocalProducts((prev) =>

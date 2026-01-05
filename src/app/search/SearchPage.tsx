@@ -2,7 +2,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useProducts } from "@/contexts/ProductContext";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
@@ -12,7 +12,7 @@ import Link from "next/link";
 export default function SearchResults() {
   const params = useSearchParams();
   const q = params.get("q")?.toLowerCase() ?? "";
-  const { products } = useProducts();
+  const { products, searchProducts } = useProducts();
 
   // Record the search (for users landing directly)
   useEffect(() => {
@@ -24,12 +24,17 @@ export default function SearchResults() {
     }).catch(() => {});
   }, [q]);
 
-  const filtered = products.filter(
-    (p: any) =>
-      p.status === true && // 🟢 Only active
-      (p.name.toLowerCase().includes(q) ||
-        p.category?.name.toLowerCase().includes(q))
-  );
+  // const filtered = products.filter(
+  //   (p: any) =>
+  //     p.status === true && // 🟢 Only active
+  //     (p.name.toLowerCase().includes(q) ||
+  //       p.category?.name.toLowerCase().includes(q))
+  // );
+
+  const filtered = useMemo(() => {
+    if (!q) return [];
+    return searchProducts(q).filter((p: any) => p.status === true);
+  }, [q, products, searchProducts]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">

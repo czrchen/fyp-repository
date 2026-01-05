@@ -2,15 +2,16 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { cookies } from "next/headers";
 
-// 🔥 YOU WILL UPDATE THIS: Python API URL
-const PYTHON_API = "http://127.0.0.1:8000/predict";
+// Python API URL
+const PYTHON_API = process.env.NEXT_PUBLIC_PYTHON_API!;
+const PYTHON_API_LOCAL = process.env.NEXT_PUBLIC_PYTHON_API_LOCAL!;
 
 export async function GET(req: Request) {
     try {
         const cookieStore = await cookies();
         const cookieString = cookieStore.toString();
 
-        // ✅ Fetch current user session
+        //  Fetch current user session
         const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
             headers: { Cookie: cookieString },
             cache: "no-store",
@@ -29,7 +30,7 @@ export async function GET(req: Request) {
         const logs = await prisma.eventLog.findMany({
             where: { user_id: user.id },
             orderBy: { event_time: "desc" },
-            take: 20,
+            // take: 20,
             select: {
                 product_id: true,
                 category_id: true,
@@ -38,18 +39,18 @@ export async function GET(req: Request) {
             },
         });
 
+        // console.log("User Logs: ", logs);
+
         if (logs.length === 0) {
             return NextResponse.json({ recommended: [] });
         }
 
         // STEP 2 — Extract sequences
-        const product_ids = logs.map((l) => l.product_id);
-        const category_ids = logs.map((l) => l.category_id);
-        const brand_ids = logs.map((l) => l.brandId);
-        const event_types = logs.map((l) => l.event_type);
-
-        // STEP 3 — Call Python API
-        const response = await fetch(PYTHON_API, {
+        const product_ids = logs.map(l => l.product_id).reverse();
+        const category_ids = logs.map(l => l.category_id).reverse();
+        const brand_ids = logs.map(l => l.brandId).reverse();
+        const event_types = logs.map(l => l.event_type).reverse();
+        const response = await fetch(PYTHON_API_LOCAL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -61,31 +62,34 @@ export async function GET(req: Request) {
         });
 
         const text = await response.text();
-        console.log("🔥 Python raw response:", text);
 
         let data;
         try {
             data = JSON.parse(text);
         } catch {
-            console.error("❌ Python did NOT return JSON!");
+            console.error(" Python did NOT return JSON!");
             return NextResponse.json({ recommended: [] });
         }
 
         const predictedCategories = data.recommended_categories;
-
-        console.log("Predicted categories from Python:", predictedCategories);
 
         if (!predictedCategories || predictedCategories.length === 0) {
             return NextResponse.json({ recommended: [] });
         }
 
         // STEP 4 — Fetch products from predicted categories
-        const products = await prisma.product.findMany({
+        let products = await prisma.product.findMany({
             where: {
                 categoryId: { in: predictedCategories },
             },
-            take: 20,
+            include: {
+                variants: true,
+                brands: true,
+                category: true,
+            },
         });
+
+        products = products.sort(() => Math.random() - 0.5).slice(0, 100);
 
         return NextResponse.json({ recommended: products });
     } catch (err) {

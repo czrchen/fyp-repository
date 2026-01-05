@@ -5,13 +5,13 @@ import prisma from "@/lib/prisma";
 
 export async function GET() {
     try {
-        // 1️⃣ Get logged-in session
+        // Get logged-in session
         const session = await getServerSession(authOptions);
 
         const email = session?.user?.email;
 
         if (!email) {
-            console.log("❌ No email in session");
+            console.log(" No email in session");
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -37,12 +37,12 @@ export async function GET() {
         });
 
         if (!user) {
-            console.log("❌ User not found in database");
+            console.log(" User not found in database");
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
         return NextResponse.json(user);
     } catch (error) {
-        console.error("💥 Error fetching current user:", error);
+        console.error("Error fetching current user:", error);
         // Return detailed error in development
         return NextResponse.json({
             error: "Internal server error",

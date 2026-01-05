@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// ✅ GET /api/categories?level=main&includeChildren=true
+//  GET /api/categories?level=main&includeChildren=true
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     }
 }
 
-// ✅ POST /api/categories
+//  POST /api/categories
 export async function POST(req: Request) {
     try {
         const { name, parentId } = await req.json();

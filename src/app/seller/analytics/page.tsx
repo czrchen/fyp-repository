@@ -23,7 +23,20 @@ import {
 } from "lucide-react";
 import { useSeller } from "@/contexts/SellerContext";
 import { useOrders } from "@/contexts/OrderContext";
+import { EstimatedDaysModal } from "@/components/EstimatedDaysModal";
 import { toast } from "sonner";
+import { useBuyerMessages } from "@/contexts/BuyerMessageContext";
+
+type PendingItem = {
+  orderId: string;
+  itemId: string;
+  productId?: string;
+  productName?: string;
+  imageUrl: string;
+  attributes: Record<string, any>;
+  delieveredAt?: string;
+  estimatedDays?: number;
+} | null;
 
 export default function SellerAnalytics() {
   const {
@@ -35,15 +48,17 @@ export default function SellerAnalytics() {
     refetchingSellerData,
   } = useSeller();
   const { fetchOrders } = useOrders();
+  const { sendMessage, refetchSessions } = useBuyerMessages();
   const [openMap, setOpenMap] = useState<{ [id: string]: boolean }>({});
   const [localStatus, setLocalStatus] = useState<{ [id: string]: string }>({});
   const [buttonState, setButtonState] = useState<{ [id: string]: string }>({});
+  const [showDeliveredModal, setShowDeliveredModal] = useState(false);
+  const [pendingDeliveredItem, setPendingDeliveredItem] =
+    useState<PendingItem>(null);
+  const [orderFilter, setOrderFilter] = useState<string>("All");
+
   const toggle = (id: string) =>
     setOpenMap((prev) => ({ ...prev, [id]: !prev[id] }));
-
-  // 🟦 Loading Screen
-
-  // 🟩 Key Stats
   const metrics = [
     {
       label: "Revenue",
@@ -82,41 +97,95 @@ export default function SellerAnalytics() {
     );
   };
 
-  // 🟦 Top Products (sorted by salesCount)
+  // Top Products (sorted by salesCount)
   const topProducts = [...products]
     .sort((a: any, b: any) => b.analytics?.salesCount - a.analytics?.salesCount)
     .slice(0, 5);
 
   const handleStatusChange = async (
+    item: any,
     orderId: string,
     itemId: string,
-    newStatus: string
+    newStatus: string,
+    estimatedDays?: number
   ) => {
-    // Set button to loading
     setButtonState((prev) => ({ ...prev, [itemId]: "loading" }));
 
     try {
-      await fetch("/api/seller/order/updateStatus", {
+      const res = await fetch("/api/seller/order/updateStatus", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, itemId, status: newStatus }),
+        body: JSON.stringify({
+          orderId,
+          itemId,
+          status: newStatus,
+          estimatedDays: newStatus === "Delivered" ? estimatedDays : undefined,
+        }),
       });
 
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Failed to update status");
+        setButtonState((prev) => ({ ...prev, [itemId]: "idle" }));
+        return;
+      }
+
+      // Update local context
       updateOrderItemStatus(orderId, itemId, newStatus);
       await fetchOrders();
+      await refetchingSellerData();
 
       toast.success("Status Updated");
 
-      // Set button to success
-      setButtonState((prev) => ({ ...prev, [itemId]: "success" }));
+      const chatRes = await fetch("/api/messages/getChatSession", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderItemId: itemId,
+        }),
+      });
 
-      // After 3 seconds, return to idle
+      const chatData = await chatRes.json();
+
+      console.log("Items : ", item);
+
+      const productName = item.productName || "";
+
+      if (newStatus !== "Delivered") {
+      }
+
+      if (chatRes.ok) {
+        const payload = [
+          {
+            status: newStatus,
+            orderId: item.orderId ?? null,
+            productId: item.productId ?? null,
+            productName:
+              newStatus == "Delivered" ? productName : item.product.name,
+            imageUrl: item.imageUrl ?? "",
+            attributes: item.attributes ?? null,
+            deliveredAt: item.deliveredAt ?? null,
+            estimatedDays: estimatedDays ?? null,
+          },
+        ];
+        await sendMessage(
+          chatData.chatSessionId,
+          `Status of this item has been updated to ${newStatus}: `,
+          "chatbot",
+          true,
+          "status_update",
+          payload
+        );
+        await refetchSessions();
+      }
+
+      setButtonState((prev) => ({ ...prev, [itemId]: "success" }));
       setTimeout(() => {
         setButtonState((prev) => ({ ...prev, [itemId]: "idle" }));
-      }, 3000);
-      await refetchingSellerData();
+      }, 2000);
     } catch (err) {
-      console.error(err);
+      toast.error("Server error");
       setButtonState((prev) => ({ ...prev, [itemId]: "idle" }));
     }
   };
@@ -196,7 +265,7 @@ export default function SellerAnalytics() {
                     <p className="text-muted-foreground">No sales yet.</p>
                   ) : (
                     topProducts
-                      .slice(0, 10) // ⬅️ Only 10 items max
+                      .slice(0, 10) // Only 10 items max
                       .map((p: any, index: number) => (
                         <div
                           key={p.id}
@@ -227,16 +296,37 @@ export default function SellerAnalytics() {
           {/* Order */}
           <TabsContent value="orders">
             <Card>
-              <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>Your latest customer orders</CardDescription>
-              </CardHeader>
-
+              <div className="flex items-start justify-between px-7">
+                <div>
+                  <CardTitle>Recent Orders</CardTitle>
+                  <CardDescription>Your latest customer orders</CardDescription>
+                </div>
+                <select
+                  value={orderFilter}
+                  onChange={(e) => setOrderFilter(e.target.value)}
+                  className="px-3 py-2 border rounded-lg text-sm bg-white shadow-sm hover:border-gray-400 transition-colors"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Received">Received</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </div>
               <CardContent className="max-h-[540px] min-h-[360px] overflow-y-auto space-y-4 pr-2">
                 {orders.length === 0 ? (
                   <p className="text-muted-foreground">No orders yet.</p>
                 ) : (
                   orders.map((order) => {
+                    // 1. Filter items ONCE per order
+                    const filteredItems = order.items.filter(
+                      (item) =>
+                        orderFilter === "All" || item.status === orderFilter
+                    );
+
+                    // 2. If no items match → hide this entire order card
+                    if (filteredItems.length === 0) return null;
+
                     const open = openMap[order.orderId] ?? false;
                     const isCompleted = order.items.every((i) =>
                       ["Received", "Cancelled"].includes(i.status)
@@ -274,14 +364,13 @@ export default function SellerAnalytics() {
                             >
                               {isCompleted ? "Completed" : "In Progress"}
                             </span>
-
                             <span className="text-sm text-muted-foreground">
                               {open ? "▲" : "▼"}
                             </span>
                           </div>
                         </div>
 
-                        {/* COLLAPSE CONTENT */}
+                        {/* Collapse Section */}
                         <div
                           className={`transition-all duration-300 ease-in-out overflow-hidden ${
                             open
@@ -290,63 +379,50 @@ export default function SellerAnalytics() {
                           }`}
                         >
                           <div className="space-y-4">
-                            {order.items.map((item) => (
+                            {filteredItems.map((item) => (
                               <div
                                 key={item.id}
                                 className="group relative flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
                               >
                                 {/* LEFT SIDE */}
                                 <div className="flex items-center gap-4 flex-1">
-                                  <div className="relative flex-shrink-0">
-                                    <img
-                                      src={item.imageUrl || "/placeholder.png"}
-                                      alt={item.product.name}
-                                      className="w-20 h-20 object-cover rounded-lg shadow-sm"
-                                    />
-                                  </div>
-
+                                  <img
+                                    src={item.imageUrl || "/placeholder.png"}
+                                    alt={item.product.name}
+                                    className="w-20 h-20 object-cover rounded-lg shadow-sm"
+                                  />
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex flex-col">
-                                      <p className="font-medium">
-                                        {item.product.name}
-                                      </p>
-                                      <p className="font-medium">
-                                        {/* 🏷️ Show selected attributes, if any */}
-                                        {item.attributes &&
-                                          Object.keys(item.attributes).length >
-                                            0 && (
-                                            <span className="text-sm text-muted-foreground">
-                                              (
-                                              {Object.entries(item.attributes)
-                                                .map(
-                                                  ([key, val]) =>
-                                                    `${key}: ${val}`
-                                                )
-                                                .join(", ")}
-                                              )
-                                            </span>
-                                          )}
-                                      </p>
-                                    </div>
-
+                                    <p className="font-medium">
+                                      {item.product.name}
+                                    </p>
+                                    {item.attributes &&
+                                      Object.keys(item.attributes).length >
+                                        0 && (
+                                        <p className="text-sm text-muted-foreground">
+                                          (
+                                          {Object.entries(item.attributes)
+                                            .map(
+                                              ([key, val]) => `${key}: ${val}`
+                                            )
+                                            .join(", ")}
+                                          )
+                                        </p>
+                                      )}
                                     <div className="flex items-center gap-3 text-sm text-gray-600">
-                                      <span className="flex items-center gap-1">
+                                      <span>
                                         <span className="font-medium">
                                           Qty:
-                                        </span>
-                                        <span>{item.quantity}</span>
+                                        </span>{" "}
+                                        {item.quantity}
                                       </span>
                                       <span className="text-gray-300">•</span>
-                                      <span className="flex items-center gap-1">
-                                        <span>RM {item.price.toFixed(2)}</span>
-                                      </span>
+                                      <span>RM {item.price.toFixed(2)}</span>
                                     </div>
                                   </div>
                                 </div>
 
-                                {/* RIGHT SIDE — PRICE + STATUS + BUTTON */}
+                                {/* RIGHT SIDE */}
                                 <div className="flex items-center gap-6 ml-4">
-                                  {/* TOTAL PRICE */}
                                   <div className="text-right">
                                     <div className="text-xs text-gray-500 mb-1">
                                       Total
@@ -357,26 +433,61 @@ export default function SellerAnalytics() {
                                     </div>
                                   </div>
 
-                                  {/* STATUS SELECT + UPDATE BUTTON */}
+                                  {/* Status Control */}
                                   <div className="flex flex-col gap-2 w-40">
                                     <select
                                       value={
                                         localStatus[item.id] ?? item.status
                                       }
-                                      onChange={(e) =>
+                                      onChange={(e) => {
+                                        const newStatus = e.target.value;
+
+                                        if (newStatus === "Delivered") {
+                                          setPendingDeliveredItem({
+                                            orderId: order.orderId,
+                                            itemId: item.id,
+                                            productId: item.productId,
+                                            productName: item.product.name,
+                                            imageUrl: item.imageUrl
+                                              ? item.imageUrl
+                                              : "",
+                                            attributes: item.attributes
+                                              ? item.attributes
+                                              : {},
+                                          });
+                                          setShowDeliveredModal(true);
+                                          return;
+                                        }
+
                                         setLocalStatus((prev) => ({
                                           ...prev,
-                                          [item.id]: e.target.value,
-                                        }))
-                                      }
-                                      className="w-full px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 bg-white text-gray-700 cursor-pointer hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-colors"
+                                          [item.id]: newStatus,
+                                        }));
+                                      }}
+                                      className="w-full px-3 py-2 text-sm rounded-lg border bg-white text-gray-700"
                                     >
-                                      <option value="Pending">Pending</option>
-                                      <option value="Delivered">
+                                      <option
+                                        value="Pending"
+                                        disabled={item.status !== "Pending"}
+                                      >
+                                        Pending
+                                      </option>
+                                      <option
+                                        value="Delivered"
+                                        disabled={item.status === "Received"}
+                                      >
                                         Delivered
                                       </option>
-                                      <option value="Received">Received</option>
-                                      <option value="Cancelled">
+                                      <option
+                                        value="Received"
+                                        disabled={item.status === "Pending"}
+                                      >
+                                        Received
+                                      </option>
+                                      <option
+                                        value="Cancelled"
+                                        disabled={item.status !== "Pending"}
+                                      >
                                         Cancelled
                                       </option>
                                     </select>
@@ -384,27 +495,24 @@ export default function SellerAnalytics() {
                                     <button
                                       onClick={() =>
                                         handleStatusChange(
+                                          item,
                                           order.orderId,
                                           item.id,
-                                          localStatus[item.id] ?? item.status
+                                          localStatus[item.id] ?? item.status,
+                                          item?.estimatedDays
                                         )
                                       }
                                       disabled={
-                                        buttonState[item.id] === "loading"
+                                        buttonState[item.id] === "loading" ||
+                                        showDeliveredModal
                                       }
-                                      className="w-full text-sm font-medium px-4 py-2 bg-black text-white rounded-lg 
-             hover:bg-gray-800 active:bg-gray-900 transition-colors shadow-sm 
-             hover:shadow disabled:opacity-50 disabled:cursor-not-allowed 
-             focus:outline-none focus:ring-2 focus:ring-black/20"
+                                      className="w-full text-sm font-medium px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50"
                                     >
-                                      {buttonState[item.id] === "loading" &&
-                                        "Updating..."}
-                                      {buttonState[item.id] === "success" &&
-                                        "Updated ✓"}
-                                      {!buttonState[item.id] ||
-                                      buttonState[item.id] === "idle"
-                                        ? "Update Status"
-                                        : ""}
+                                      {buttonState[item.id] === "loading"
+                                        ? "Updating..."
+                                        : buttonState[item.id] === "success"
+                                        ? "Updated ✓"
+                                        : "Update Status"}
                                     </button>
                                   </div>
                                 </div>
@@ -419,6 +527,29 @@ export default function SellerAnalytics() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <EstimatedDaysModal
+            open={showDeliveredModal}
+            onClose={() => setShowDeliveredModal(false)}
+            onConfirm={(days) => {
+              if (pendingDeliveredItem) {
+                setLocalStatus((prev) => ({
+                  ...prev,
+                  [pendingDeliveredItem.itemId]: "Delivered",
+                }));
+
+                handleStatusChange(
+                  pendingDeliveredItem,
+                  pendingDeliveredItem.orderId,
+                  pendingDeliveredItem.itemId,
+                  "Delivered",
+                  Number(days)
+                );
+              }
+
+              setShowDeliveredModal(false);
+            }}
+          />
 
           {/* Reviews */}
           <TabsContent value="reviews">

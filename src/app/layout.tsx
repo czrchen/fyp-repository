@@ -1,5 +1,5 @@
 import "./globals.css";
-import AppProviders from "@/providers/AppProviders"; // ✅ import the client wrapper
+import AppProviders from "@/providers/AppProviders"; //  import the client wrapper
 
 export const metadata = {
   title: "ShopHub",

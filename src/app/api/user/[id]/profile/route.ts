@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// ✅ GET profile
+//  GET profile
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -17,7 +17,7 @@ export async function GET(
     return NextResponse.json(user);
 }
 
-// ✅ PATCH update profile
+//  PATCH update profile
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -26,7 +26,7 @@ export async function PATCH(
         const { id } = await params;
         const data = await req.json();
 
-        // 🧠 Step 1: Update the user profile info only
+        // Step 1: Update the user profile info only
         const updatedUser = await prisma.user.update({
             where: { id },
             data: {
@@ -40,7 +40,7 @@ export async function PATCH(
             },
         });
 
-        // 🏗️ Step 2: Create a single address (user input)
+        //  Step 2: Create a single address (user input)
         if (data.address) {
             const addr = data.address;
 

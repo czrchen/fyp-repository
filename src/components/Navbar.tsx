@@ -14,15 +14,15 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import SearchBar from "@/components/SearchBar";
 import { useCart } from "../contexts/CartContext";
-import { useSession, signOut } from "next-auth/react"; // ✅ use NextAuth session
-import { useProfile } from "@/contexts/ProfileContext"; // ✅ add this
+import { useSession, signOut } from "next-auth/react"; //  use NextAuth session
+import { useProfile } from "@/contexts/ProfileContext"; //  add this
 
 const Navbar = () => {
   const { totalItems } = useCart();
-  const { data: session, status } = useSession(); // ✅ NextAuth session
+  const { data: session, status } = useSession(); //  NextAuth session
 
   const users = session?.user;
-  const { user } = useProfile(); // ✅ get full user info (includes isSeller)
+  const { user } = useProfile(); //  get full user info (includes isSeller)
 
   return (
     <nav className="sticky top-0 z-50 bg-card border-b border-border shadow-md">
@@ -58,7 +58,7 @@ const Navbar = () => {
               </Button>
             </Link>
 
-            {/* 👤 User Icon / Profile / Logout */}
+            {/* User Icon / Profile / Logout */}
             {users ? (
               <>
                 <Link href="/profile">
@@ -91,7 +91,7 @@ const Navbar = () => {
               </Link>
             )}
 
-            {/* ✅ Only show if user is a seller */}
+            {/* Only show if user is a seller */}
             {user?.isSeller && (
               <Link href="/seller">
                 <Button

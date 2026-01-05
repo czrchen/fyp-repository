@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 export async function DELETE(req: Request) {
     try {
-        // ✅ 1. Get current logged-in user from cookies
+        //  1. Get current logged-in user from cookies
         const cookieStore = await cookies();
         const cookieString = cookieStore.toString();
 
@@ -22,7 +22,7 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // ✅ 2. Extract cart item ID from query parameters
+        //  2. Extract cart item ID from query parameters
         const { searchParams } = new URL(req.url);
         const id = searchParams.get("id");
 
@@ -30,7 +30,7 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: "Missing cart item ID" }, { status: 400 });
         }
 
-        // ✅ 3. Ensure the item belongs to the current user (security check)
+        //  3. Ensure the item belongs to the current user (security check)
         const cartItem = await prisma.cartItem.findUnique({
             where: { id },
         });
@@ -39,14 +39,14 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: "Item not found or unauthorized" }, { status: 404 });
         }
 
-        // ✅ 4. Delete the item
+        //  4. Delete the item
         await prisma.cartItem.delete({
             where: { id },
         });
 
         return NextResponse.json({ message: "Item deleted successfully" });
     } catch (error) {
-        console.error("❌ Delete cart error:", error);
+        console.error(" Delete cart error:", error);
         return NextResponse.json(
             { error: "Failed to delete cart item" },
             { status: 500 }

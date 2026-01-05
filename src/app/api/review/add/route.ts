@@ -12,7 +12,7 @@ export async function POST(req: Request) {
             );
         }
 
-        // 🧩 1️⃣ Find the order item and check if already reviewed
+        // Find the order item and check if already reviewed
         const orderItem = await prisma.orderItem.findUnique({
             where: { id: orderItemId },
             select: {
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
             );
         }
 
-        // 🧩 2️⃣ Update the order item with rating & feedback
+        //  Update the order item with rating & feedback
         await prisma.orderItem.update({
             where: { id: orderItemId },
             data: {
@@ -46,8 +46,8 @@ export async function POST(req: Request) {
             },
         });
 
-        // 🧩 3️⃣ Update ProductAnalytics
-        // 🧩 ProductAnalytics
+        //  Update ProductAnalytics
+        //  ProductAnalytics
         const productAnalytics = await prisma.productAnalytics.upsert({
             where: { productId },
             create: {
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
             },
         });
 
-        // 🧩 VariantAnalytics
+        //  VariantAnalytics
         if (orderItem.variantId) {
             const variantAnalytics = await prisma.variantAnalytics.upsert({
                 where: { variantId: orderItem.variantId },
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
             });
         }
 
-        // 🧩 SellerPerformance
+        //  SellerPerformance
         const sellerPerformance = await prisma.sellerPerformance.upsert({
             where: { sellerId: orderItem.sellerId },
             create: {
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
             message: "Review submitted successfully",
         });
     } catch (err: any) {
-        console.error("❌ Error submitting review:", err);
+        console.error(" Error submitting review:", err);
         return NextResponse.json(
             { error: "Failed to submit review" },
             { status: 500 }

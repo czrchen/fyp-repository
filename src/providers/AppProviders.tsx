@@ -10,12 +10,13 @@ import { CategoryProvider } from "@/contexts/CategoryContext";
 import { AllSellerInfoProvider } from "@/contexts/AllSellerInfoContext";
 import ChatbotWidget from "@/components/ChatbotWidget";
 import { ProfileProvider } from "@/contexts/ProfileContext";
+import { RecommenderProvider } from "@/contexts/RecommenderContext";
 import { Toaster } from "sonner";
 
 function AuthenticatedProviders({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
 
-  // 🧩 Always wrap with ProfileProvider
+  //  Always wrap with ProfileProvider
   // ProfileProvider itself will handle session detection
   return <ProfileProvider>{children}</ProfileProvider>;
 }
@@ -30,20 +31,23 @@ export default function AppProviders({
       <Toaster position="bottom-right" richColors closeButton />
 
       {/* Wrap entire app in all providers */}
-      <CartProvider>
-        <OrderProvider>
-          <ProductProvider>
-            <CategoryProvider>
-              <BuyerMessageProvider>
-                <AllSellerInfoProvider>
-                  <AuthenticatedProviders>{children}</AuthenticatedProviders>
-                </AllSellerInfoProvider>
-              </BuyerMessageProvider>
-            </CategoryProvider>
-          </ProductProvider>
-        </OrderProvider>
-      </CartProvider>
-      <ChatbotWidget />
+      <RecommenderProvider>
+        <CartProvider>
+          <OrderProvider>
+            <ProductProvider>
+              <CategoryProvider>
+                <BuyerMessageProvider>
+                  <AllSellerInfoProvider>
+                    <AuthenticatedProviders>{children}</AuthenticatedProviders>
+                  </AllSellerInfoProvider>
+                </BuyerMessageProvider>
+              </CategoryProvider>
+            </ProductProvider>
+          </OrderProvider>
+        </CartProvider>
+      </RecommenderProvider>
+
+      {/* <ChatbotWidget /> */}
     </SessionProvider>
   );
 }

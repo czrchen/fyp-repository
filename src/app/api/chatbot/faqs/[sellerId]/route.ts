@@ -11,7 +11,7 @@ export async function GET(
 ) {
     try {
 
-        const { sellerId } = await context.params; // ✅ await params here
+        const { sellerId } = await context.params; //  await params here
         const bot = await prisma.sellerChatbot.findUnique({
             where: { sellerId: sellerId },
         });
@@ -27,7 +27,7 @@ export async function GET(
 
         return NextResponse.json({ faqs });
     } catch (error) {
-        console.error("❌ Failed to fetch FAQs:", error);
+        console.error(" Failed to fetch FAQs:", error);
         return NextResponse.json(
             { faqs: [], message: "Failed to load FAQs." },
             { status: 500 }

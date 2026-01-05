@@ -46,7 +46,7 @@ export default function EditVariantProductModal({
     variants: product.variants || [],
   });
 
-  // ✅ Add Tag
+  //  Add Tag
   const addTag = (tag: string) => {
     if (tag && !formData.tags.includes(tag))
       setFormData({ ...formData, tags: [...formData.tags, tag] });
@@ -57,7 +57,7 @@ export default function EditVariantProductModal({
       tags: formData.tags.filter((x: any) => x !== t),
     });
 
-  // ✅ Add Variant
+  //  Add Variant
   const addVariant = () => {
     const newVariant = {
       id: crypto.randomUUID(),
@@ -72,7 +72,7 @@ export default function EditVariantProductModal({
     setActiveTab(newVariant.id);
   };
 
-  // ✅ Remove Variant
+  //  Remove Variant
   const removeVariant = (id: string) => {
     setFormData({
       ...formData,
@@ -83,7 +83,7 @@ export default function EditVariantProductModal({
     }
   };
 
-  // ✅ Update Variant Field
+  //  Update Variant Field
   const updateVariant = (id: string, key: string, value: any) => {
     setFormData({
       ...formData,
@@ -93,7 +93,7 @@ export default function EditVariantProductModal({
     });
   };
 
-  // ✅ Add Attribute
+  //  Add Attribute
   const addAttribute = (id: string) => {
     const variant = formData.variants.find((v: any) => v.id === id);
     if (!variant) return;
@@ -101,7 +101,7 @@ export default function EditVariantProductModal({
     updateVariant(id, "attributes", attrs);
   };
 
-  // ✅ Remove Attribute
+  //  Remove Attribute
   const removeAttribute = (id: string, key: string) => {
     const variant = formData.variants.find((v: any) => v.id === id);
     if (!variant) return;
@@ -110,7 +110,7 @@ export default function EditVariantProductModal({
     updateVariant(id, "attributes", copy);
   };
 
-  // ✅ Submit
+  //  Submit
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -153,10 +153,10 @@ export default function EditVariantProductModal({
             <DialogTitle>Edit Variant Product</DialogTitle>
           </DialogHeader>
 
-          {/* 🧩 Product-Level Fields */}
+          {/*  Product-Level Fields */}
           <div className="space-y-5 mb-6">
             <div>
-              <Label>Product Name</Label>
+              <Label className="mb-1">Product Name</Label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
@@ -166,7 +166,7 @@ export default function EditVariantProductModal({
             </div>
 
             <div>
-              <Label>Description</Label>
+              <Label className="mb-1">Description</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) =>
@@ -176,7 +176,7 @@ export default function EditVariantProductModal({
             </div>
 
             <div>
-              <Label>Status</Label>
+              <Label className="mb-1">Status</Label>
               <Select
                 value={formData.status ? "active" : "inactive"}
                 onValueChange={(val) =>
@@ -195,7 +195,7 @@ export default function EditVariantProductModal({
 
             {/* Tags */}
             <div>
-              <Label>Tags</Label>
+              <Label className="mb-1">Tags</Label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {formData.tags.map((tag: any, i: any) => (
                   <span
@@ -223,7 +223,7 @@ export default function EditVariantProductModal({
             </div>
           </div>
 
-          {/* 🧩 Variant Tabs */}
+          {/*  Variant Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="flex items-center justify-between mb-4">
               <TabsList className="overflow-x-auto flex-1">
@@ -231,7 +231,7 @@ export default function EditVariantProductModal({
                   <TabsTrigger
                     key={v.id}
                     value={v.id}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 mb-1"
                   >
                     {v.name || "Untitled"}
                     <X
@@ -260,7 +260,7 @@ export default function EditVariantProductModal({
                 <div className="space-y-5 mt-2 border rounded-xl p-4 bg-gray-50/50">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Variant Name</Label>
+                      <Label className="mb-1">Variant Name</Label>
                       <Input
                         value={variant.name}
                         onChange={(e) =>
@@ -269,7 +269,7 @@ export default function EditVariantProductModal({
                       />
                     </div>
                     <div>
-                      <Label>SKU</Label>
+                      <Label className="mb-1">SKU</Label>
                       <Input
                         value={variant.sku}
                         onChange={(e) =>
@@ -281,7 +281,7 @@ export default function EditVariantProductModal({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label>Price (RM)</Label>
+                      <Label className="mb-1">Price (RM)</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -296,7 +296,7 @@ export default function EditVariantProductModal({
                       />
                     </div>
                     <div>
-                      <Label>Stock</Label>
+                      <Label className="mb-1">Stock</Label>
                       <Input
                         type="number"
                         value={variant.stock}
@@ -313,7 +313,7 @@ export default function EditVariantProductModal({
 
                   {/* Variant Image */}
                   <div>
-                    <Label>Variant Image</Label>
+                    <Label className="mb-1">Variant Image</Label>
                     <ImageUploader
                       onUploaded={(url) =>
                         updateVariant(variant.id, "imageUrl", url)
@@ -330,7 +330,7 @@ export default function EditVariantProductModal({
 
                   {/* Attributes */}
                   <div>
-                    <Label>Attributes</Label>
+                    <Label className="mb-1">Attributes</Label>
                     <div className="space-y-2 mt-2">
                       {Object.entries(variant.attributes || {}).map(
                         ([k, v], i) => (

@@ -62,7 +62,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Fetch both user and addresses in one go
+  // Fetch both user and addresses in one go
   const fetchProfile = async (uid: string) => {
     try {
       setLoading(true);
@@ -90,13 +90,17 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 🔹 Refresh function (can be called manually)
+  // Refresh function (can be called manually)
   const refreshProfile = async () => {
     if (!session?.user?.id) return;
-    await fetchProfile(session.user.id);
+    const res = await fetch("/api/user/current");
+    if (!res.ok) return console.error("Failed to fetch current user");
+
+    const data = await res.json();
+    await fetchProfile(data.id);
   };
 
-  // 🔹 Handle session changes
+  // Handle session changes
   useEffect(() => {
     if (status === "loading") return; // avoid firing early
 

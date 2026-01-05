@@ -59,7 +59,7 @@ export const SellerMessageProvider = ({
   const fetchSessions = useCallback(async () => {
     try {
       if (status !== "authenticated" || !session?.user?.id) {
-        console.log("⚠️ No active session — skipping chat fetch.");
+        console.log("No active session — skipping chat fetch.");
         setSessions([]);
         return;
       }
@@ -72,7 +72,7 @@ export const SellerMessageProvider = ({
       const data: ChatSession[] = await res.json();
       setSessions(data.filter((s) => s.isActive));
     } catch (err) {
-      console.error("❌ Failed to fetch seller sessions:", err);
+      console.error(" Failed to fetch seller sessions:", err);
       setSessions([]);
     }
   }, [session, status]);
@@ -122,13 +122,13 @@ export const SellerMessageProvider = ({
         body: JSON.stringify({ sessionId, content, senderType }),
       });
     } catch (err) {
-      console.error("❌ Failed to send seller message:", err);
+      console.error(" Failed to send seller message:", err);
     }
   };
 
-  // ✅ Mark messages as read instantly + update DB
+  //  Mark messages as read instantly + update DB
   const markSessionAsRead = async (sessionId: string) => {
-    // --- 1️⃣ Optimistic UI update (instant)
+    // --- Optimistic UI update (instant)
     setSessions((prev) =>
       prev.map((s) =>
         s.id === sessionId
@@ -143,7 +143,7 @@ export const SellerMessageProvider = ({
       )
     );
 
-    // --- 2️⃣ Update the backend
+    // --- Update the backend
     try {
       const res = await fetch(`/api/messages/markAsRead/${sessionId}`, {
         method: "PATCH",
@@ -152,10 +152,10 @@ export const SellerMessageProvider = ({
       });
 
       if (!res.ok) {
-        console.error("❌ markAsRead failed:", await res.text());
+        console.error(" markAsRead failed:", await res.text());
       }
     } catch (err) {
-      console.error("❌ Network error marking messages as read:", err);
+      console.error(" Network error marking messages as read:", err);
     }
   };
 

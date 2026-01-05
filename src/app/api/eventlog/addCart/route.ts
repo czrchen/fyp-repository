@@ -29,7 +29,7 @@ export async function POST(req: Request) {
             userSession,
         } = body;
 
-        // ✅ Validate required input
+        //  Validate required input
         if (!productId || (!userSession)) {
             return NextResponse.json(
                 { error: "Missing required fields: productId or user info" },
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
             );
         }
 
-        // 🧩 Confirm product exists (for safety)
+        // Confirm product exists (for safety)
         const product = await prisma.product.findUnique({
             where: { id: productId },
             select: { sellerId: true },
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Product not found" }, { status: 404 });
         }
 
-        // ✅ Record a new "cart" event
+        //  Record a new "cart" event
         await prisma.eventLog.create({
             data: {
                 event_time: new Date(),

@@ -7,7 +7,7 @@ export async function GET() {
         const cookieStore = await cookies();
         const cookieString = cookieStore.toString();
 
-        // 1️⃣ Get current user
+        // Get current user
         const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
             headers: { Cookie: cookieString },
             cache: "no-store",
@@ -22,7 +22,7 @@ export async function GET() {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // 2️⃣ Get seller record
+        // Get seller record
         const seller = await prisma.seller.findUnique({
             where: { userId: user.id },
             include: {
@@ -39,7 +39,7 @@ export async function GET() {
             );
         }
 
-        // 3️⃣ Fetch ALL Order Items belonging to this seller
+        // Fetch ALL Order Items belonging to this seller
         const sellerOrderItems = await prisma.orderItem.findMany({
             where: { sellerId: seller.id },
             include: {
@@ -54,7 +54,7 @@ export async function GET() {
             },
         });
 
-        // 4️⃣ Group items by Order
+        // Group items by Order
         const groupedOrders = Object.values(
             sellerOrderItems.reduce((acc: any, item) => {
                 if (!acc[item.orderId]) {
@@ -74,7 +74,7 @@ export async function GET() {
             }, {})
         );
 
-        // 5️⃣ Stats (from SellerPerformance)
+        // Stats (from SellerPerformance)
         const perf = seller.performance;
         const stats = {
             totalSales: perf?.totalSales ?? 0,
@@ -90,15 +90,15 @@ export async function GET() {
             ).length,
         };
 
-        // 6️⃣ Final Response
+        // Final Response
         return NextResponse.json({
             seller,
             stats,
             orderItems: sellerOrderItems,
-            orders: groupedOrders, // 🔥 grouped by orderId
+            orders: groupedOrders, // grouped by orderId
         });
     } catch (error) {
-        console.error("❌ Seller Overview Error:", error);
+        console.error(" Seller Overview Error:", error);
         return NextResponse.json(
             { error: "Internal Server Error" },
             { status: 500 }

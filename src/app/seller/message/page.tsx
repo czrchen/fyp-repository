@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { format, isToday, isYesterday } from "date-fns";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Search, ArrowLeft } from "lucide-react";
-import { useSellerMessages } from "@/contexts/SellerMessageContext"; // ✅ Seller context
+import { useSellerMessages } from "@/contexts/SellerMessageContext"; //  Seller context
 
 type Buyer = {
   id: number;
@@ -30,11 +30,11 @@ export default function SellerMessagesPage() {
   const [messageText, setMessageText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // ✅ Find messages for the currently active session
+  //  Find messages for the currently active session
   const currentMessages =
     sessions.find((s) => s.id === activeSession?.id)?.messages || [];
 
-  // ✅ Handle send message (for seller)
+  //  Handle send message (for seller)
   const handleSend = async () => {
     if (!messageText.trim() || !activeSession) return;
 
@@ -43,7 +43,7 @@ export default function SellerMessagesPage() {
     setMessageText("");
   };
 
-  // ✅ Filter sessions by buyer name
+  //  Filter sessions by buyer name
   const filteredSessions = sessions.filter((session) =>
     session.buyerName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -67,7 +67,7 @@ export default function SellerMessagesPage() {
     scrollToBottom();
   }, [currentMessages, activeSession?.id]);
 
-  // ✅ Group messages by date
+  //  Group messages by date
   const groupedMessages = currentMessages.reduce((groups, message) => {
     const date = format(new Date(message.createdAt), "yyyy-MM-dd");
     if (!groups[date]) groups[date] = [];
@@ -98,7 +98,7 @@ export default function SellerMessagesPage() {
         <Card>
           <CardContent className="p-0">
             <div className="grid grid-cols-1 md:grid-cols-3 h-[600px]">
-              {/* ✅ Left Sidebar (Buyer List) */}
+              {/* Left Sidebar (Buyer List) */}
               <div className="border-r border-border">
                 <div className="p-4 border-b border-border">
                   <div className="relative flex items-center">
@@ -124,7 +124,7 @@ export default function SellerMessagesPage() {
                           setActiveSession(session.id);
                           setTimeout(scrollToBottom, 100);
                           if (session.unreadCount > 0) {
-                            await markSessionAsRead(session.id); // ✅ instant + backend sync
+                            await markSessionAsRead(session.id); //  instant + backend sync
                           }
                         }}
                         className={`p-4 border-b border-border cursor-pointer hover:bg-muted transition-smooth ${
@@ -132,7 +132,7 @@ export default function SellerMessagesPage() {
                         }`}
                       >
                         <div className="flex gap-3 items-center justify-between">
-                          {/* 🧑‍ Buyer Info */}
+                          {/* Buyer Info */}
                           <div className="flex gap-3 items-center">
                             <Avatar>
                               <AvatarImage src="" />
@@ -150,7 +150,7 @@ export default function SellerMessagesPage() {
                             </div>
                           </div>
 
-                          {/* 🔵 Unread badge */}
+                          {/* Unread badge */}
                           {session.unreadCount > 0 && (
                             <span className="bg-blue-500 text-white text-[10px] font-semibold px-2 py-1 rounded-full min-w-[20px] text-center">
                               {session.unreadCount}
@@ -167,10 +167,10 @@ export default function SellerMessagesPage() {
                 </ScrollArea>
               </div>
 
-              {/* ✅ Right Section (Messages) */}
+              {/* Right Section (Messages) */}
               <div className="md:col-span-2 flex flex-col h-[600px]">
                 {" "}
-                {/* ✅ added fixed height */}
+                {/* added fixed height */}
                 {activeSession ? (
                   <>
                     {/* Header */}
@@ -197,7 +197,7 @@ export default function SellerMessagesPage() {
                         {Object.entries(groupedMessages).map(
                           ([date, messages]) => (
                             <div key={date}>
-                              {/* 🗓️ Date divider */}
+                              {/* Date divider */}
                               <div className="text-center text-xs text-muted-foreground mb-3">
                                 {isToday(new Date(date))
                                   ? "Today"
@@ -206,7 +206,7 @@ export default function SellerMessagesPage() {
                                   : format(new Date(date), "d MMM yyyy")}
                               </div>
 
-                              {/* 💬 Message bubbles */}
+                              {/* Message bubbles */}
                               <div className="space-y-2">
                                 {messages.map((m) => (
                                   <div
@@ -234,12 +234,12 @@ export default function SellerMessagesPage() {
                                             : "6px",
                                       }}
                                     >
-                                      {/* 💬 Message text */}
+                                      {/* Message text */}
                                       <p className="text-[15px] break-words">
                                         {m.content}
                                       </p>
 
-                                      {/* ⏰ Time at bottom right */}
+                                      {/* Time at bottom right */}
                                       <span className="text-[11px] text-gray-500 absolute bottom-1.5 right-3">
                                         {format(
                                           new Date(m.createdAt),

@@ -152,9 +152,11 @@ model ChatSession {
 model ChatMessage {
   id            String      @id @default(uuid())
   sessionId     String
-  senderType    String
+  senderType    String      // "buyer" | "seller" | "chatbot"
   senderId      String
-  content       String
+  content       String?     // text only (optional because product cards have no text)
+  type          String      @default("text") // "text" | "product_list" | "order_list" | "product_detail"
+  payload       Json?       // extra data: products, orders, variants, etc.
   isRead        Boolean     @default(false)
   createdAt     DateTime    @default(now())
   attachmentUrl String?

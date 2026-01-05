@@ -23,17 +23,24 @@ export default function CategoryPage() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [priceRange, setPriceRange] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedShops, setSelectedShops] = useState<string[]>([]);
+  const [minRating, setMinRating] = useState<number>(0);
+  const clearFilters = () => {
+    setSelectedSubcategories([]);
+    setPriceRange("all");
+    setSelectedBrands([]);
+    setSelectedShops([]);
+    setMinRating(0);
+  };
+  const hasActiveFilters =
+    selectedSubcategories.length ||
+    selectedBrands.length ||
+    selectedShops.length ||
+    priceRange !== "all" ||
+    minRating !== 0;
 
-  // 💰 Price options (radio buttons)
-  const priceOptions = [
-    { id: "all", label: "All Prices", range: [0, Infinity] },
-    { id: "below200", label: "Below RM200", range: [0, 200] },
-    { id: "200to400", label: "RM200 – RM400", range: [200, 400] },
-    { id: "400to600", label: "RM400 – RM600", range: [400, 600] },
-    { id: "above600", label: "Above RM600", range: [600, Infinity] },
-  ];
-
-  // ✅ Find main category
+  //  Find main category
   const selectedCategory = useMemo(
     () =>
       categories.find(
@@ -42,7 +49,7 @@ export default function CategoryPage() {
     [categoryName, categories]
   );
 
-  // ✅ Memoize subcategories and counts
+  //  Memoize subcategories and counts
   const subCategories = useMemo(() => {
     if (!selectedCategory) return [];
     return (
@@ -55,14 +62,73 @@ export default function CategoryPage() {
     );
   }, [selectedCategory?.id, products]); // <-- depends only on stable identifiers
 
-  // ✅ Memoize the selected price range array (stable reference)
+  //  Price options (radio buttons)
+  const priceOptions = [
+    { id: "all", label: "All Prices", range: [0, Infinity] },
+    { id: "below200", label: "Below RM200", range: [0, 200] },
+    { id: "200to400", label: "RM200 – RM400", range: [200, 400] },
+    { id: "400to600", label: "RM400 – RM600", range: [400, 600] },
+    { id: "above600", label: "Above RM600", range: [600, Infinity] },
+  ];
+
+  const brandOptions: string[] = useMemo(() => {
+    if (!selectedCategory) return [];
+
+    const categoryIds = [
+      selectedCategory.id,
+      ...subCategories.map((s) => s.id),
+    ];
+
+    return [
+      ...new Set(
+        products
+          .filter(
+            (p: any) =>
+              categoryIds.includes(p.categoryId) ||
+              categoryIds.includes(p.subcategoryId)
+          )
+          .map((p: any) => p.brands?.name)
+      ),
+    ].filter(Boolean) as string[];
+  }, [
+    products,
+    selectedCategory?.id,
+    subCategories.map((s) => s.id).join(","),
+  ]);
+
+  const shopOptions: string[] = useMemo(() => {
+    if (!selectedCategory) return [];
+
+    const categoryIds = [
+      selectedCategory.id,
+      ...subCategories.map((s) => s.id),
+    ];
+
+    return [
+      ...new Set(
+        products
+          .filter(
+            (p: any) =>
+              categoryIds.includes(p.categoryId) ||
+              categoryIds.includes(p.subcategoryId)
+          )
+          .map((p: any) => p.seller?.store_name)
+      ),
+    ].filter(Boolean) as string[];
+  }, [
+    products,
+    selectedCategory?.id,
+    subCategories.map((s) => s.id).join(","),
+  ]);
+
+  //  Memoize the selected price range array (stable reference)
   const selectedPriceRange = useMemo(() => {
     return (
       priceOptions.find((p) => p.id === priceRange)?.range || [0, Infinity]
     );
   }, [priceRange]);
 
-  // ✅ Stable filtering effect
+  //  Stable filtering effect
   useEffect(() => {
     if (!selectedCategory || products.length === 0) return;
 
@@ -74,20 +140,44 @@ export default function CategoryPage() {
     const filteredProducts = products.filter((p: any) => {
       const matchesCategory =
         targetIds.includes(p.categoryId) || targetIds.includes(p.subcategoryId);
+
       const matchesPrice = p.price >= minPrice && p.price <= maxPrice;
-      return matchesCategory && matchesPrice;
+
+      const brandName = p.brands?.name || "";
+      const matchesBrand =
+        selectedBrands.length === 0 || selectedBrands.includes(brandName);
+      selectedBrands.length === 0 || selectedBrands.includes(p.brands?.name);
+
+      const shopName = p.seller?.store_name || "";
+      const matchesShop =
+        selectedShops.length === 0 || selectedShops.includes(shopName);
+
+      const matchesRating = p.ratingAvg >= minRating;
+
+      return (
+        matchesCategory &&
+        matchesPrice &&
+        matchesBrand &&
+        matchesShop &&
+        matchesRating
+      );
     });
 
     setFiltered(filteredProducts);
   }, [
     products,
-    selectedCategory?.id, // stable identifier
-    selectedSubcategories.join(","), // join ensures dependency is string, not array ref
-    selectedPriceRange.toString(), // stable dependency
-    subCategories.map((s) => s.id).join(","), // stable dependency from array
+    selectedCategory?.id,
+    selectedSubcategories.join(","),
+
+    selectedPriceRange.toString(),
+    subCategories.map((s) => s.id).join(","),
+
+    selectedBrands.join(","), // ← IMPORTANT
+    selectedShops.join(","), // ← IMPORTANT
+    minRating,
   ]);
 
-  // ✅ Toggle subcategory checkbox
+  //  Toggle subcategory checkbox
   const toggleSubcategory = (id: string) => {
     setSelectedSubcategories((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -96,7 +186,7 @@ export default function CategoryPage() {
 
   // 4 rows × 4 columns = 16 products per page
   const productsPerPage = 18;
-  const totalPages = Math.ceil(products.length / productsPerPage);
+  const totalPages = Math.ceil(filtered.length / productsPerPage);
 
   // Calculate products for current page
   const indexOfLastProduct = currentPage * productsPerPage;
@@ -132,14 +222,23 @@ export default function CategoryPage() {
         pages.push(totalPages);
       }
     }
-
     return pages;
   };
 
-  // ✅ Sidebar Component (Subcategory + Price Filter)
+  //  Sidebar Component (Subcategory + Price Filter)
   const Sidebar = () => (
     <div className="border border-border rounded-lg p-4 bg-card space-y-6">
-      {/* 🧩 Subcategory Filter */}
+      <div className="flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-foreground">Filters</h2>
+        <button
+          onClick={clearFilters}
+          disabled={!hasActiveFilters}
+          className="text-sm text-primary hover:underline"
+        >
+          Clear all
+        </button>
+      </div>
+      {/*  Subcategory Filter */}
       <div>
         <h3 className="text-lg font-semibold text-foreground mb-2">
           Subcategories
@@ -170,7 +269,7 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      {/* 💰 Price Range Filter */}
+      {/* Price Range Filter */}
       <div>
         <h3 className="text-lg font-semibold text-foreground mb-2">
           Price Range
@@ -194,13 +293,80 @@ export default function CategoryPage() {
           ))}
         </div>
       </div>
+
+      {/* Brand Filter */}
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Brand</h3>
+        <div className="space-y-2">
+          {brandOptions.map((brand) => (
+            <div key={brand} className="flex items-center space-x-2">
+              <Checkbox
+                checked={selectedBrands.includes(brand)}
+                onCheckedChange={() =>
+                  setSelectedBrands((prev) =>
+                    prev.includes(brand)
+                      ? prev.filter((b) => b !== brand)
+                      : [...prev, brand]
+                  )
+                }
+              />
+              <span className="text-sm">{brand}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Shop Filter */}
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Shop</h3>
+        <div className="space-y-2">
+          {shopOptions.map((shop) => (
+            <div key={shop} className="flex items-center space-x-2">
+              <Checkbox
+                checked={selectedShops.includes(shop)}
+                onCheckedChange={() =>
+                  setSelectedShops((prev) =>
+                    prev.includes(shop)
+                      ? prev.filter((s) => s !== shop)
+                      : [...prev, shop]
+                  )
+                }
+              />
+              <span className="text-sm">{shop}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Rating Filter */}
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Minimum Rating</h3>
+        <div className="space-y-1">
+          {[0, 1, 2, 3, 4, 5].map((star) => (
+            <label
+              key={star}
+              className="flex items-center space-x-2 cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="rating"
+                checked={minRating === star}
+                onChange={() => setMinRating(star)}
+              />
+              <span className="text-sm">
+                {star === 0 ? "All Ratings" : `⭐ ${star}+`}
+              </span>
+            </label>
+          ))}
+        </div>
+      </div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 md:px-10 py-10">
-        {/* 🏠 Back to Home */}
+        {/* Back to Home */}
         <Link
           href="/"
           className="inline-flex items-center gap-2 text-primary hover:underline mb-6"
@@ -209,7 +375,7 @@ export default function CategoryPage() {
           Back to Home
         </Link>
 
-        {/* 🔖 Header */}
+        {/*  Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold capitalize">
             {categoryName} Products
@@ -226,21 +392,35 @@ export default function CategoryPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* 🧱 Desktop Sidebar */}
+          {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-72 flex-shrink-0">
             <Sidebar />
           </aside>
 
-          {/* 🛍 Product Grid */}
+          {/* Product Grid */}
           <main className="flex-1">
             {currentProducts.length > 0 ? (
               <>
-                {/* 🧩 Product Grid */}
+                {/*  Product Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                   {currentProducts.map((p: any) => (
                     <Link
                       key={p.id}
                       href={`/product/${p.id}`}
+                      onClick={() => {
+                        fetch("/api/eventlog/view", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            productId: p.id,
+                            brandId: p.brandId,
+                            categoryId: p.categoryId,
+                            price: p.price,
+                            userSession:
+                              localStorage.getItem("sessionId") || "guest",
+                          }),
+                        }).catch(() => {});
+                      }}
                       className="block transition-transform hover:scale-[1.02] duration-200"
                     >
                       <ProductCard {...p} mode="buyer" />
@@ -248,7 +428,7 @@ export default function CategoryPage() {
                   ))}
                 </div>
 
-                {/* 🧭 Pagination (move OUTSIDE the grid) */}
+                {/* Pagination (move OUTSIDE the grid) */}
                 {totalPages > 1 && (
                   <div className="flex justify-center items-center gap-2 mt-12 mx-auto w-fit">
                     {/* Previous */}
@@ -309,7 +489,7 @@ export default function CategoryPage() {
           </main>
         </div>
 
-        {/* 📱 Mobile Sidebar Overlay */}
+        {/* Mobile Sidebar Overlay */}
         <AnimatePresence>
           {showSidebar && (
             <motion.div

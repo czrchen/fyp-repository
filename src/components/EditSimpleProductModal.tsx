@@ -112,14 +112,14 @@ export default function EditSimpleProductModal({
           <div className="space-y-6 mt-2">
             {/* Basic Info */}
             <div className="space-y-3">
-              <Label>Name</Label>
+              <Label className="mb-1">Name</Label>
               <Input
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
                 }
               />
-              <Label>Description</Label>
+              <Label className="mb-1">Description</Label>
               <Textarea
                 value={formData.description}
                 onChange={(e) =>
@@ -131,7 +131,7 @@ export default function EditSimpleProductModal({
             {/* Price & Stock */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Price (RM)</Label>
+                <Label className="mb-1">Price (RM)</Label>
                 <Input
                   type="number"
                   step="0.01"
@@ -145,7 +145,7 @@ export default function EditSimpleProductModal({
                 />
               </div>
               <div>
-                <Label>Stock</Label>
+                <Label className="mb-1">Stock</Label>
                 <Input
                   type="number"
                   value={formData.stock}
@@ -161,7 +161,7 @@ export default function EditSimpleProductModal({
 
             {/* Status */}
             <div>
-              <Label>Status</Label>
+              <Label className="mb-1">Status</Label>
               <Select
                 value={formData.status ? "active" : "inactive"}
                 onValueChange={(val) =>
@@ -180,7 +180,7 @@ export default function EditSimpleProductModal({
 
             {/* Tags */}
             <div>
-              <Label>Tags</Label>
+              <Label className="mb-1">Tags</Label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {formData.tags.map((tag: any, i: any) => (
                   <span
@@ -209,7 +209,7 @@ export default function EditSimpleProductModal({
 
             {/* Attributes */}
             <div>
-              <Label>Attributes</Label>
+              <Label className="mb-1">Attributes</Label>
               <div className="space-y-2 mt-2">
                 {Object.entries(formData.attributes).map(([k, v], i) => (
                   <div key={i} className="flex gap-2 items-center">
@@ -249,7 +249,7 @@ export default function EditSimpleProductModal({
 
             {/* Images */}
             <div className="space-y-3">
-              <Label>Main Image</Label>
+              <Label className="mb-1">Main Image</Label>
               <ImageUploader
                 onUploaded={(url) =>
                   setFormData({ ...formData, imageUrl: url })
@@ -263,7 +263,7 @@ export default function EditSimpleProductModal({
                 />
               )}
 
-              <Label>Gallery Images</Label>
+              <Label className="mb-1">Gallery Images</Label>
               <ImageUploader
                 onUploaded={(url) =>
                   setFormData({

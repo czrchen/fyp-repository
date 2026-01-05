@@ -73,7 +73,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   const { addToCart } = useCart();
 
-  // ✅ Construct full product object for modals
+  //  Construct full product object for modals
   const product = {
     id,
     name,
@@ -93,13 +93,13 @@ export default function ProductCard({
     analytics,
   };
 
-  // ✅ Determine displayed image (fallbacks)
+  //  Determine displayed image (fallbacks)
   const displayImage =
     imageUrl ||
     (variants.length > 0 && variants[0].imageUrl) ||
     "/placeholder.png";
 
-  // ✅ Determine displayed price text
+  //  Determine displayed price text
   const displayPrice =
     variants.length > 0
       ? `From RM ${Math.min(...variants.map((v) => v.price)).toFixed(2)}`
@@ -107,7 +107,7 @@ export default function ProductCard({
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-all duration-200 border border-border group flex flex-col">
-      {/* 🖼️ Product Image */}
+      {/* Product Image */}
       <CardHeader className="p-0 relative">
         {displayImage ? (
           <div className="relative h-48 w-full bg-muted">
@@ -131,7 +131,7 @@ export default function ProductCard({
         </Badge>
       </CardHeader>
 
-      {/* 📦 Product Details */}
+      {/* Product Details */}
       <CardContent className="p-4 flex-1 flex flex-col space-y-3">
         {/* Product Name & Subcategory */}
         <div className="space-y-1">
@@ -143,10 +143,10 @@ export default function ProductCard({
           )}
         </div>
 
-        {/* 💲 Price */}
+        {/* Price */}
         <div className="text-xl font-bold text-primary">{displayPrice}</div>
 
-        {/* 📊 Stats */}
+        {/* Stats */}
         <div className="flex items-center gap-4 text-xs text-muted-foreground py-2 border-t border-border">
           {/* Views */}
           <div className="flex items-center gap-1.5" title="Views">
@@ -176,7 +176,7 @@ export default function ProductCard({
           </div>
         </div>
 
-        {/* 🧩 Variants count */}
+        {/*  Variants count */}
         <div className="text-xs text-muted-foreground min-h-[1rem]">
           {variants.length > 0 ? (
             <p>
@@ -188,7 +188,7 @@ export default function ProductCard({
         </div>
       </CardContent>
 
-      {/* 🛍️ Seller mode footer */}
+      {/* Seller mode footer */}
       {mode === "seller" && (
         <CardFooter className="p-4 pt-0 mt-auto flex justify-between items-center">
           <Badge
@@ -198,7 +198,7 @@ export default function ProductCard({
             {status ? "Active" : "Inactive"}
           </Badge>
 
-          {/* ✅ Detect if product has variants */}
+          {/* Detect if product has variants */}
           {variants?.length > 0 ? (
             <EditVariantProductModal
               product={product}

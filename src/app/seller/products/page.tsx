@@ -126,7 +126,7 @@ export default function SellerProductsPage() {
                 </Link>
                 <Link href="/seller/addProduct?type=variant" passHref>
                   <DropdownMenuItem className="cursor-pointer">
-                    🧩 Add Product with Variants
+                    Add Product with Variants
                   </DropdownMenuItem>
                 </Link>
               </DropdownMenuContent>
@@ -167,7 +167,7 @@ export default function SellerProductsPage() {
                     </Link>
                     <Link href="/seller/addProduct?type=variant" passHref>
                       <DropdownMenuItem className="cursor-pointer">
-                        🧩 Add Product with Variants
+                        Add Product with Variants
                       </DropdownMenuItem>
                     </Link>
                   </DropdownMenuContent>
@@ -197,8 +197,8 @@ export default function SellerProductsPage() {
                   key={p.id}
                   {...p}
                   imageUrl={p.imageUrl ?? undefined}
-                  sellerName={storeName || ""} // ✅ FIX ADDED
-                  sellerId={sellerId || ""} // ✅ ensures ProductCard gets sellerId
+                  sellerName={storeName || ""} //  FIX ADDED
+                  sellerId={sellerId || ""} //  ensures ProductCard gets sellerId
                   mode="seller"
                   onUpdated={(updated) => {
                     setLocalProducts((prev) =>

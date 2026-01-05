@@ -25,7 +25,7 @@ import AddressModal from "@/components/AddressModal";
 import type { AddressData } from "@/components/AddressModal";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"; // ✅ Added
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"; //  Added
 import {
   User,
   MapPin,
@@ -57,6 +57,7 @@ const Profile = () => {
   const [reviewedItems, setReviewedItems] = useState<Record<string, boolean>>(
     {}
   );
+  const [orderFilter, setOrderFilter] = useState<string>("All");
 
   useEffect(() => {
     if (user) {
@@ -64,8 +65,12 @@ const Profile = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
   const handleRegisterSeller = async (sellerData: any) => {
-    // 👇 Optimistic update
+    // Optimistic update
     setLocalUser((prev) =>
       prev
         ? {
@@ -75,7 +80,7 @@ const Profile = () => {
         : prev
     );
 
-    // 👇 Background re-fetch
+    // Background re-fetch
     await refreshProfile();
   };
 
@@ -83,7 +88,7 @@ const Profile = () => {
     setLocalUser((prev) => (prev ? { ...prev, ...updatedFields } : prev));
   };
 
-  // 🧱 Add this function to handle optimistic updates
+  // Add this function to handle optimistic updates
   const handleAddressAdded = (newAddress: AddressData) => {
     setLocalUser((prev) =>
       prev
@@ -102,7 +107,7 @@ const Profile = () => {
     return age;
   }
 
-  // 🧩 Optional: gender symbol mapping
+  //  Optional: gender symbol mapping
   const genderSymbol = (gender?: string) => {
     switch (gender?.toLowerCase()) {
       case "male":
@@ -137,7 +142,7 @@ const Profile = () => {
     try {
       setSubmittingId(item.id);
 
-      // 🧠 Instant UI feedback (optimistic)
+      // Instant UI feedback (optimistic)
       setReviewedItems((prev) => ({ ...prev, [item.id]: true }));
 
       const res = await fetch("/api/review/add", {
@@ -155,13 +160,13 @@ const Profile = () => {
 
       toast.success("Review submitted successfully!");
 
-      // ✅ Re-sync with backend
+      //  Re-sync with backend
       await fetchOrders();
     } catch (err) {
-      console.error("❌ Review submission failed:", err);
+      console.error(" Review submission failed:", err);
       toast.error("Failed to submit review.");
 
-      // 🧩 Roll back optimistic UI if failed
+      //  Roll back optimistic UI if failed
       setReviewedItems((prev) => ({ ...prev, [item.id]: false }));
     } finally {
       setSubmittingId(null);
@@ -195,7 +200,7 @@ const Profile = () => {
         <Card className="mb-8">
           <CardHeader>
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-              {/* 🧍 Avatar */}
+              {/* Avatar */}
               <Avatar className="h-24 w-24 shrink-0">
                 <AvatarImage
                   src={
@@ -209,7 +214,7 @@ const Profile = () => {
                 </AvatarFallback>
               </Avatar>
 
-              {/* 📄 User Info + Edit */}
+              {/* User Info + Edit */}
               <div className="flex-1 w-full">
                 <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                   {/* Left: Details */}
@@ -256,7 +261,7 @@ const Profile = () => {
                 {/* Divider */}
                 <Separator className="my-6" />
 
-                {/* 📍 Saved Addresses */}
+                {/* Saved Addresses */}
                 <div className="space-y-3">
                   <h3 className="font-semibold flex items-center gap-2">
                     <MapPin className="h-4 w-4" /> Saved Addresses
@@ -307,7 +312,7 @@ const Profile = () => {
                   </Button>
                 </div>
 
-                {/* 🧱 Address Modal */}
+                {/* Address Modal */}
                 <AddressModal
                   userId={localUser.id}
                   open={isModalOpen}
@@ -351,7 +356,7 @@ const Profile = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-3 lg:grid-cols-4 mb-8 px-2">
+          <TabsList className="grid grid-cols-3 lg:grid-cols-3 mb-8 px-2">
             <TabsTrigger value="orders">
               <Package className="mr-2 h-4 w-4" /> Orders
             </TabsTrigger>
@@ -361,9 +366,6 @@ const Profile = () => {
             <TabsTrigger value="reviews">
               <Star className="mr-2 h-4 w-4" /> Reviews
             </TabsTrigger>
-            <TabsTrigger value="settings">
-              <Settings className="mr-2 h-4 w-4" /> Settings
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent
@@ -371,104 +373,168 @@ const Profile = () => {
             className="space-y-4 min-h-[400px] lg:min-h-[540px]"
           >
             <Card>
-              <CardHeader>
-                <CardTitle>Order History</CardTitle>
-                <CardDescription>Track and manage your orders</CardDescription>
+              <CardHeader className="flex items-start justify-between px-7">
+                <div>
+                  <CardTitle>Recent Orders</CardTitle>
+                  <CardDescription>Your latest customer orders</CardDescription>
+                </div>
+
+                {/* Status Filter */}
+                <select
+                  value={orderFilter}
+                  onChange={(e) => {
+                    setOrderFilter(e.target.value);
+                    setShowAll(false); // reset view when filter changes
+                  }}
+                  className="px-3 py-2 border rounded-lg text-sm bg-white shadow-sm hover:border-gray-400 transition-colors"
+                >
+                  <option value="All">All Statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Received">Received</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
               </CardHeader>
 
               <CardContent className="space-y-4 max-h-[800px] overflow-y-auto">
                 {error && <p className="text-red-600">{error}</p>}
+
                 {isloading ? (
                   <p>Loading orders...</p>
                 ) : orders.length === 0 ? (
                   <p className="text-muted-foreground">No orders found.</p>
                 ) : (
                   <>
-                    {orders
-                      .slice(0, showAll ? orders.length : 3)
-                      .map((order) => {
-                        const isOpen = expanded === order.id;
-                        const allDelivered = order.items.every((i) =>
-                          ["Received", "Cancelled"].includes(i.status)
-                        );
+                    {/* ========================= */}
+                    {/* FILTER FIRST, THEN SLICE */}
+                    {/* ========================= */}
+                    {(() => {
+                      // 1. Filter orders based on item status
+                      const filteredOrders = orders.filter((order) =>
+                        order.items.some(
+                          (item) =>
+                            orderFilter === "All" || item.status === orderFilter
+                        )
+                      );
 
+                      console.log("Orders : ", orders);
+
+                      // 2. Apply "Recent 3" or "View All"
+                      const visibleOrders = showAll
+                        ? filteredOrders
+                        : filteredOrders.slice(0, 3);
+
+                      if (filteredOrders.length === 0) {
                         return (
-                          <div
-                            key={order.id}
-                            className="border rounded-lg p-4 transition-all"
-                          >
-                            {/* 🧱 Order Header */}
-                            <div
-                              className="flex flex-col md:flex-row justify-between items-start md:items-center cursor-pointer gap-2"
-                              onClick={() =>
-                                setExpanded(isOpen ? null : order.id)
-                              }
-                            >
-                              <div>
-                                <h3 className="font-semibold">
-                                  Order #{order.id.slice(0, 8).toUpperCase()}
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {new Date(order.createdAt).toLocaleString()}
-                                </p>
-                                <p className="text-sm text-muted-foreground">
-                                  Total: RM {order.totalAmount.toFixed(2)}
-                                </p>
-                              </div>
+                          <p className="text-muted-foreground">
+                            No orders found for selected status.
+                          </p>
+                        );
+                      }
 
-                              <div className="flex items-center gap-2">
-                                <Badge
-                                  variant="outline"
-                                  className={
-                                    allDelivered
-                                      ? "bg-green-100 text-green-600 border-green-200"
-                                      : "bg-yellow-100 text-yellow-700 border-yellow-300"
+                      return (
+                        <>
+                          {visibleOrders.map((order) => {
+                            // Filter items inside the order (same status)
+                            const filteredItems = order.items.filter(
+                              (item) =>
+                                orderFilter === "All" ||
+                                item.status === orderFilter
+                            );
+
+                            if (filteredItems.length === 0) return null;
+
+                            const isOpen = expanded === order.id;
+
+                            const allCompleted = order.items.every((i) =>
+                              ["Received", "Cancelled"].includes(i.status)
+                            );
+
+                            return (
+                              <div
+                                key={order.id}
+                                className="border rounded-lg p-4 transition-all"
+                              >
+                                {/* Order Header */}
+                                <div
+                                  className="flex flex-col md:flex-row justify-between items-start md:items-center cursor-pointer gap-2"
+                                  onClick={() =>
+                                    setExpanded(isOpen ? null : order.id)
                                   }
                                 >
-                                  {allDelivered ? "Completed" : "In Progress"}
-                                </Badge>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="text-muted-foreground"
+                                  <div>
+                                    <h3 className="font-semibold">
+                                      Order #
+                                      {order.id.slice(0, 8).toUpperCase()}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">
+                                      {new Date(
+                                        order.createdAt
+                                      ).toLocaleString()}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      Total: RM {order.totalAmount.toFixed(2)}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <Badge
+                                      variant="outline"
+                                      className={
+                                        allCompleted
+                                          ? "bg-green-100 text-green-600 border-green-200"
+                                          : "bg-yellow-100 text-yellow-700 border-yellow-300"
+                                      }
+                                    >
+                                      {allCompleted
+                                        ? "Completed"
+                                        : "In Progress"}
+                                    </Badge>
+
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="text-muted-foreground"
+                                    >
+                                      {isOpen ? "▲" : "▼"}
+                                    </Button>
+                                  </div>
+                                </div>
+
+                                {/* Collapsible Items */}
+                                <div
+                                  className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                                    isOpen
+                                      ? "max-h-[800px] opacity-100 mt-4"
+                                      : "max-h-0 opacity-0"
+                                  }`}
                                 >
-                                  {isOpen ? "▲" : "▼"}
-                                </Button>
-                              </div>
-                            </div>
+                                  <div className="space-y-3">
+                                    {filteredItems.map((item) => (
+                                      <div
+                                        key={item.id}
+                                        className="flex items-center justify-between border rounded-md p-3 bg-muted/50"
+                                      >
+                                        {/* LEFT: Product info */}
+                                        <div className="flex items-center gap-3">
+                                          <img
+                                            src={
+                                              item.imageUrl ||
+                                              "/placeholder.png"
+                                            }
+                                            alt={item.name}
+                                            className="w-16 h-16 object-cover rounded"
+                                          />
 
-                            {/* 🧱 Collapsible Items */}
-                            <div
-                              className={`transition-all overflow-hidden ${
-                                isOpen ? "max-h-[600px] mt-4" : "max-h-0"
-                              }`}
-                            >
-                              <div className="space-y-3">
-                                {order.items.map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className="flex items-center justify-between border rounded-md p-3 bg-muted/50"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <img
-                                        src={
-                                          item.imageUrl || "/placeholder.png"
-                                        }
-                                        alt={item.name}
-                                        className="w-16 h-16 object-cover rounded"
-                                      />
-                                      <div>
-                                        <div className="flex flex-col">
-                                          <p className="font-medium">
-                                            {item.name}
-                                          </p>
+                                          <div>
+                                            <p className="font-medium">
+                                              {item.name}
+                                            </p>
 
-                                          <p>
-                                            {/* 🏷️ Show selected attributes, if any */}
                                             {item.attributes &&
                                               Object.keys(item.attributes)
                                                 .length > 0 && (
-                                                <span className="text-sm text-muted-foreground">
+                                                <p className="text-sm text-muted-foreground">
                                                   (
                                                   {Object.entries(
                                                     item.attributes
@@ -479,56 +545,93 @@ const Profile = () => {
                                                     )
                                                     .join(", ")}
                                                   )
-                                                </span>
+                                                </p>
                                               )}
-                                          </p>
 
-                                          <p className="text-sm text-muted-foreground mt-0.5">
-                                            Qty: {item.quantity} × RM{" "}
-                                            {item.price.toFixed(2)}
-                                          </p>
+                                            <p className="text-sm text-muted-foreground">
+                                              Qty: {item.quantity} × RM{" "}
+                                              {item.price.toFixed(2)}
+                                            </p>
+
+                                            <Badge
+                                              variant={
+                                                item.status === "Delivered"
+                                                  ? "default"
+                                                  : "outline"
+                                              }
+                                              className="mt-2"
+                                            >
+                                              {item.status}
+                                            </Badge>
+                                          </div>
                                         </div>
 
-                                        <Badge
-                                          variant={
-                                            item.status === "Delivered"
-                                              ? "default"
-                                              : "outline"
-                                          }
-                                          className="mt-2"
-                                        >
-                                          {item.status}
-                                        </Badge>
+                                        {/* RIGHT: Price + Contact Seller */}
+                                        <div className="flex flex-col items-end gap-2">
+                                          <p className="font-semibold flex">
+                                            RM{" "}
+                                            {(
+                                              item.price * item.quantity
+                                            ).toFixed(2)}
+                                          </p>
+
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={async (e) => {
+                                              e.stopPropagation(); // ⛔ prevent collapsing order
+
+                                              const res = await fetch(
+                                                "/api/messages/start",
+                                                {
+                                                  method: "POST",
+                                                  headers: {
+                                                    "Content-Type":
+                                                      "application/json",
+                                                  },
+                                                  body: JSON.stringify({
+                                                    sellerId: item.sellerId,
+                                                  }),
+                                                }
+                                              );
+
+                                              const data = await res.json();
+
+                                              if (data.sessionId) {
+                                                await refetchSessions();
+                                                router.push(
+                                                  `/messages?seller=${encodeURIComponent(
+                                                    item.sellerName ?? "seller"
+                                                  )}`
+                                                );
+                                              }
+                                            }}
+                                          >
+                                            Contact Seller
+                                          </Button>
+                                        </div>
                                       </div>
-                                    </div>
-
-                                    <div className="text-right">
-                                      <p className="font-semibold">
-                                        RM{" "}
-                                        {(item.price * item.quantity).toFixed(
-                                          2
-                                        )}
-                                      </p>
-                                    </div>
+                                    ))}
                                   </div>
-                                ))}
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        );
-                      })}
+                            );
+                          })}
 
-                    {/* 🧱 View All / Show Less Button */}
-                    {orders.length > 3 && (
-                      <div className="flex justify-center">
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowAll((prev) => !prev)}
-                        >
-                          {showAll ? "Show Less" : "View All Orders"}
-                        </Button>
-                      </div>
-                    )}
+                          {/* View All / Show Less */}
+                          {filteredOrders.length > 3 && (
+                            <div className="flex justify-center">
+                              <Button
+                                variant="outline"
+                                onClick={() => setShowAll((prev) => !prev)}
+                              >
+                                {showAll ? "Show Less" : "View All Orders"}
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </>
                 )}
               </CardContent>
@@ -646,7 +749,7 @@ const Profile = () => {
                         key={order.id}
                         className="border rounded-lg p-4 transition-all"
                       >
-                        {/* 🧱 Order Header */}
+                        {/*  Order Header */}
                         <div
                           className="flex flex-col md:flex-row justify-between items-start md:items-center cursor-pointer gap-2"
                           onClick={() => setExpanded(isOpen ? null : order.id)}
@@ -671,7 +774,7 @@ const Profile = () => {
                           </div>
                         </div>
 
-                        {/* 🧱 Collapsible Review Items */}
+                        {/*  Collapsible Review Items */}
                         <div
                           className={`transition-all overflow-hidden ${
                             isOpen ? "max-h-[600px] mt-4" : "max-h-0"
@@ -694,7 +797,7 @@ const Profile = () => {
                                     <p className="font-medium">
                                       {item.name}
 
-                                      {/* 🏷️ Show selected attributes, if any */}
+                                      {/* Show selected attributes, if any */}
                                       {item.attributes &&
                                         Object.keys(item.attributes).length >
                                           0 && (
@@ -720,12 +823,12 @@ const Profile = () => {
                                   </div>
                                 </div>
 
-                                {/* ⭐ Rating + Comment */}
+                                {/* Rating + Comment */}
                                 <div className="flex-1 mt-3 md:mt-0 md:text-right">
-                                  {/* 🟡 CASE 1: No existing review → show editable form */}
+                                  {/* CASE 1: No existing review → show editable form */}
                                   {!item.rating && !item.feedback ? (
                                     <>
-                                      {/* ⭐ Editable Stars */}
+                                      {/* Editable Stars */}
                                       <div className="flex justify-end gap-1 mb-2">
                                         {[1, 2, 3, 4, 5].map((star) => (
                                           <Star
@@ -742,7 +845,7 @@ const Profile = () => {
                                         ))}
                                       </div>
 
-                                      {/* 💬 Textarea for feedback */}
+                                      {/* Textarea for feedback */}
                                       <textarea
                                         placeholder="Write a review..."
                                         className="w-full border rounded-md p-2 text-sm text-gray-700 resize-none mt-1"
@@ -756,7 +859,7 @@ const Profile = () => {
                                         }
                                       />
 
-                                      {/* 🔘 Action Buttons */}
+                                      {/* Action Buttons */}
                                       <div className="flex justify-end gap-2 mt-3">
                                         <Button
                                           size="sm"
@@ -775,9 +878,9 @@ const Profile = () => {
                                       </div>
                                     </>
                                   ) : (
-                                    /* 🟢 CASE 2: Review already exists → show readonly view */
+                                    /* CASE 2: Review already exists → show readonly view */
                                     <div className="bg-muted/40 border rounded-md p-3 text-left md:text-right">
-                                      {/* ⭐ Display saved stars */}
+                                      {/* Display saved stars */}
                                       <div className="flex justify-end gap-1 mb-1">
                                         {[1, 2, 3, 4, 5].map((star) => (
                                           <Star
@@ -791,7 +894,7 @@ const Profile = () => {
                                         ))}
                                       </div>
 
-                                      {/* 💬 Display saved feedback */}
+                                      {/* Display saved feedback */}
                                       {item.feedback ? (
                                         <p className="text-sm text-gray-700 italic border-t pt-2">
                                           “{item.feedback}”
@@ -814,68 +917,6 @@ const Profile = () => {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Account Settings */}
-          <TabsContent
-            value="settings"
-            className="space-y-4 min-h-[400px] lg:min-h-[450px]"
-          >
-            <div className="grid gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Email Preferences</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span>Order updates</span>
-                    <Button variant="outline" size="sm">
-                      Enabled
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Promotional emails</span>
-                    <Button variant="outline" size="sm">
-                      Disabled
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Newsletter</span>
-                    <Button variant="outline" size="sm">
-                      Enabled
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Privacy & Security</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">
-                    Change Password
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payment Methods</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="p-3 border rounded-lg flex justify-between items-center">
-                    <span>•••• •••• •••• 4242</span>
-                    <Button variant="ghost" size="sm">
-                      Remove
-                    </Button>
-                  </div>
-                  <Button variant="outline" className="w-full">
-                    + Add Payment Method
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
         </Tabs>
       </div>

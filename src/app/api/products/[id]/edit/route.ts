@@ -10,7 +10,7 @@ export async function PATCH(
         const body = await req.json();
         const { variants, ...productData } = body;
 
-        // 🧩 CASE 1: Variant-based product
+        // CASE 1: Variant-based product
         if (Array.isArray(variants) && variants.length > 0) {
             // Update the main product info
             await prisma.product.update({
@@ -24,7 +24,7 @@ export async function PATCH(
                 },
             });
 
-            // 🧠 Sync all variants (simplified full replace approach)
+            // Sync all variants (simplified full replace approach)
             // Delete old variants, then recreate from the new array
             await prisma.productVariant.deleteMany({
                 where: { productId: id },
@@ -49,7 +49,7 @@ export async function PATCH(
             );
         }
 
-        // 🧩 CASE 2: Simple product (no variants)
+        // CASE 2: Simple product (no variants)
         const { price, stock, status, name, description, tags, imageUrl, galleryUrls, attributes } =
             productData;
 
@@ -71,7 +71,7 @@ export async function PATCH(
 
         return NextResponse.json(updatedProduct, { status: 200 });
     } catch (err) {
-        console.error("❌ Error updating product:", err);
+        console.error("Error updating product:", err);
         return NextResponse.json(
             { error: "Failed to update product" },
             { status: 500 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useProfile } from "@/contexts/ProfileContext";
+import { useCategories } from "@/contexts/CategoryContext";
 import {
   Dialog,
   DialogContent,
@@ -36,19 +37,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-const interestOptions = [
-  "Electronics",
-  "Fashion",
-  "Home & Garden",
-  "Sports & Outdoors",
-  "Beauty & Personal Care",
-  "Books & Media",
-  "Toys & Games",
-  "Automotive",
-  "Health & Wellness",
-  "Food & Beverages",
-];
-
 const incomeLevels = [
   "Under RM25,000",
   "RM25,000 - RM50,000",
@@ -64,6 +52,7 @@ export default function ProfileCompletionModal() {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const { isLoading, categories } = useCategories();
 
   const [formData, setFormData] = useState<{
     gender: string;
@@ -81,7 +70,7 @@ export default function ProfileCompletionModal() {
     };
   }>({
     gender: "",
-    dob: null, // ✅ initial null
+    dob: null, //  initial null
     location: "",
     phone: "",
     income_level: "",
@@ -95,7 +84,7 @@ export default function ProfileCompletionModal() {
     },
   });
 
-  // 🧩 Step validation
+  //  Step validation
   const isStep1Valid =
     formData.gender && formData.dob && formData.location && formData.phone;
   const isStep2Valid = formData.income_level && formData.interests.length > 0;
@@ -106,7 +95,7 @@ export default function ProfileCompletionModal() {
     formData.address.postcode &&
     formData.address.country;
 
-  // 🔍 Fetch current user from /api/user/current
+  // Fetch current user from /api/user/current
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -122,7 +111,7 @@ export default function ProfileCompletionModal() {
     fetchUser();
   }, []);
 
-  // 🧠 Handle interest selection
+  // Handle interest selection
   const handleInterestToggle = (interest: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -132,7 +121,7 @@ export default function ProfileCompletionModal() {
     }));
   };
 
-  // 💾 Submit updated profile
+  // Submit updated profile
   const handleSubmit = async () => {
     if (!userId) return toast.error("User not found.");
 
@@ -156,8 +145,8 @@ export default function ProfileCompletionModal() {
       if (!res.ok) throw new Error("Failed to update profile");
 
       await refreshProfile();
-
       toast.success("Profile completed successfully!");
+
       setOpen(false);
     } catch (err) {
       console.error(err);
@@ -351,21 +340,27 @@ export default function ProfileCompletionModal() {
                 <Sparkles className="w-4 h-4" /> Interests (Select at least one)
               </Label>
               <div className="grid grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-2 border rounded-lg">
-                {interestOptions.map((interest) => (
-                  <div key={interest} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={interest}
-                      checked={formData.interests.includes(interest)}
-                      onCheckedChange={() => handleInterestToggle(interest)}
-                    />
-                    <label
-                      htmlFor={interest}
-                      className="text-sm font-medium leading-none cursor-pointer"
-                    >
-                      {interest}
-                    </label>
-                  </div>
-                ))}
+                {isLoading ? (
+                  <p className="text-sm text-muted-foreground">
+                    Loading categories...
+                  </p>
+                ) : (
+                  categories.map((cat) => (
+                    <div key={cat.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={cat.id}
+                        checked={formData.interests.includes(cat.id)}
+                        onCheckedChange={() => handleInterestToggle(cat.id)}
+                      />
+                      <label
+                        htmlFor={cat.id}
+                        className="text-sm font-medium leading-none cursor-pointer"
+                      >
+                        {cat.name}
+                      </label>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

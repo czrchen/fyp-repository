@@ -5,17 +5,17 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useProducts } from "@/contexts/ProductContext"; // 🧠 import context
+import { useProducts } from "@/contexts/ProductContext"; // import context
 
 export default function SearchBar() {
   const router = useRouter();
-  const { searchProducts } = useProducts(); // ✅ access fuzzy search
+  const { searchProducts } = useProducts(); //  access fuzzy search
   const [q, setQ] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   const [liveResults, setLiveResults] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
 
-  // 🔁 Load recent searches (from your /api/search-history)
+  // Load recent searches (from your /api/search-history)
   useEffect(() => {
     fetch("/api/search-history")
       .then((r) => r.json())
@@ -23,7 +23,7 @@ export default function SearchBar() {
       .catch(() => {});
   }, []);
 
-  // 🧠 Update live fuzzy matches as user types
+  // Update live fuzzy matches as user types
   useEffect(() => {
     if (q.trim()) {
       const results = searchProducts(q);
@@ -33,7 +33,7 @@ export default function SearchBar() {
     }
   }, [q, searchProducts]);
 
-  // ✅ Submit and save to history
+  //  Submit and save to history
   const submit = async (term?: string) => {
     const keyword = (term ?? q).trim();
     if (!keyword) return;
@@ -74,7 +74,7 @@ export default function SearchBar() {
         </div>
       </form>
 
-      {/* 🔽 Dropdown for live results and recent searches */}
+      {/* Dropdown for live results and recent searches */}
       {open && (liveResults.length > 0 || recent.length > 0) && (
         <div className="absolute z-20 mt-2 w-full rounded-xl border bg-white shadow-md p-2">
           {q.trim() ? (
@@ -111,7 +111,7 @@ export default function SearchBar() {
                       {item}
                     </span>
 
-                    {/* ❌ delete button */}
+                    {/*  delete button */}
                     <button
                       className="ml-2 p-1 text-gray-400 hover:text-red-500 transition-colors"
                       onMouseDown={async (e) => {

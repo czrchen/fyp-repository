@@ -47,7 +47,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { data: session, status } = useSession();
   const [items, setItems] = useState<CartItem[]>([]);
 
-  // 🛒 Add item to cart
+  // Add item to cart
   const addToCart = (item: Omit<CartItem, "quantity">) => {
     setItems((prev) => {
       const existing = prev.find(
@@ -70,12 +70,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
-  // 🔢 Update item quantity locally
+  // Update item quantity locally
   const updateQuantity = (id: string, quantity: number) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, quantity } : i)));
   };
 
-  // 🧹 Clear entire cart
+  // Clear entire cart
   const clearCart = () => {
     setItems([]);
     toast.warning(`Cart cleared`, {
@@ -83,7 +83,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  // 🔄 Fetch cart from backend
+  // Fetch cart from backend
   const fetchCart = useCallback(async () => {
     if (status !== "authenticated" || !session?.user?.id) {
       setItems([]);
@@ -97,13 +97,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
       // backend should include: product + variant + seller
       setItems(data.items || []);
-      console.log("🛍️ Cart items loaded:", data.items);
+      console.log("Cart items loaded:", data.items);
     } catch (err) {
-      console.error("❌ Failed to fetch cart:", err);
+      console.error(" Failed to fetch cart:", err);
     }
   }, [session?.user?.id, status]);
 
-  // 👤 Re-fetch on auth changes
+  // Re-fetch on auth changes
   useEffect(() => {
     if (status === "authenticated" && session?.user?.id) {
       fetchCart();
@@ -112,7 +112,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [status, session?.user?.id, fetchCart]);
 
-  // 🧮 Total quantity counter
+  // Total quantity counter
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -132,7 +132,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// ✅ Hook
+//  Hook
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) throw new Error("useCart must be used within a CartProvider");

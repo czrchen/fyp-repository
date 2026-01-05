@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 
 export async function PATCH(req: Request) {
     try {
-        // ✅ 1. Get current logged-in user
+        //  1. Get current logged-in user
         const cookieStore = await cookies();
         const cookieString = cookieStore.toString();
 
@@ -22,16 +22,16 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // ✅ 2. Parse request body
+        //  2. Parse request body
         const body = await req.json();
         const { id, quantity } = body; // 👈 simplified
 
-        // ✅ 3. Validate input
+        //  3. Validate input
         if (!id || typeof quantity !== "number" || quantity < 1) {
             return NextResponse.json({ error: "Invalid data" }, { status: 400 });
         }
 
-        // ✅ 4. Ensure the item belongs to the current user
+        //  4. Ensure the item belongs to the current user
         const existing = await prisma.cartItem.findUnique({
             where: { id },
         });
@@ -40,7 +40,7 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ error: "Item not found or unauthorized" }, { status: 404 });
         }
 
-        // ✅ 5. Update quantity
+        //  5. Update quantity
         const updated = await prisma.cartItem.update({
             where: { id },
             data: { quantity },
@@ -48,7 +48,7 @@ export async function PATCH(req: Request) {
 
         return NextResponse.json(updated);
     } catch (error) {
-        console.error("❌ Update cart error:", error);
+        console.error(" Update cart error:", error);
         return NextResponse.json(
             { error: "Failed to update cart" },
             { status: 500 }

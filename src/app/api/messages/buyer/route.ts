@@ -4,12 +4,12 @@ import { cookies } from "next/headers";
 
 export async function GET() {
     try {
-        const cookieStore = await cookies(); // ✅ await here
+        const cookieStore = await cookies(); //  await here
         const cookieString = cookieStore.toString();
-        // 1️⃣ Fetch the logged-in user info from your /api/user/current route
+        // Fetch the logged-in user info from your /api/user/current route
         const res = await fetch(`${process.env.NEXTAUTH_URL}/api/user/current`, {
             headers: {
-                Cookie: cookieString, // ✅ pass session cookies correctly
+                Cookie: cookieString, //  pass session cookies correctly
             },
             cache: "no-store",
         });
@@ -23,7 +23,7 @@ export async function GET() {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // 🔍 Get buyer's active chat sessions
+        // Get buyer's active chat sessions
         const chatSessions = await prisma.chatSession.findMany({
             where: {
                 buyerId: user.id,
@@ -40,10 +40,8 @@ export async function GET() {
             orderBy: { updatedAt: "desc" },
         });
 
-        // 🧠 Format + add unreadCount
+        // Format + add unreadCount
         const formatted = chatSessions.map((s) => {
-            // 🔢 Count unread for THIS buyer:
-            // "Unread for buyer" = messages from seller that are not read yet
             const unreadCount = s.messages.filter(
                 (m) => m.senderType === "seller" && m.isRead === false
             ).length;
@@ -55,14 +53,28 @@ export async function GET() {
                 sellerName: s.seller.store_name,
                 sellerLogo: s.seller.store_logo,
                 isActive: s.isActive,
-                unreadCount,        // 👈 new field
-                messages: s.messages,
+                unreadCount,
+
+                messages: s.messages.map((m) => ({
+                    id: m.id,
+                    senderType: m.senderType,
+                    senderId: m.senderId,
+                    content: m.content,
+                    isRead: m.isRead,
+                    isChatbot: m.isChatbot,
+                    createdAt: m.createdAt,
+
+                    // FIX STARTS HERE
+                    messageType: (m as any).type ?? "text",
+                    payload: (m as any).payload ?? null,
+                    // FIX ENDS HERE
+                })),
             };
         });
 
         return NextResponse.json(formatted);
     } catch (error) {
-        console.error("❌ Failed to fetch buyer messages:", error);
+        console.error("Failed to fetch buyer messages:", error);
         return NextResponse.json(
             { error: "Failed to load chat sessions" },
             { status: 500 }

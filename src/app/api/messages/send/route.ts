@@ -10,32 +10,39 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { sessionId, content, senderType, isChatbot } = await req.json();
+        const {
+            sessionId,
+            content,
+            senderType,
+            isChatbot,
+            messageType = "text",
+            payload = null
+        } = await req.json();
 
-        if (!sessionId || !content || !senderType) {
+        if (!sessionId || !senderType) {
             return NextResponse.json(
                 { error: "Missing required fields" },
                 { status: 400 }
             );
         }
 
-        // 🧠 Determine chatbot flag safely
-        const chatbotFlag = isChatbot === null ? false : isChatbot;
-        const isRead = chatbotFlag ? true : false; // ✅ chatbot messages are always read
+        // Chatbot messages are always auto-read
+        let isRead = isChatbot ? true : false;
+        isRead = messageType === "status_update" ? false : isRead;
 
-        // 📨 Create a new message
         const newMessage = await prisma.chatMessage.create({
             data: {
                 sessionId,
                 senderType,
                 senderId: session.user.id,
-                content,
-                isRead,               // ✅ handled above
-                isChatbot: chatbotFlag, // ✅ handled dynamically
+                content: content ?? "",
+                type: messageType,
+                payload,
+                isRead,
+                isChatbot: !!isChatbot,
             },
         });
 
-        // 🕒 Update chat session timestamp
         await prisma.chatSession.update({
             where: { id: sessionId },
             data: { updatedAt: new Date() },
@@ -43,7 +50,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json(newMessage);
     } catch (error) {
-        console.error("❌ Error creating chat message:", error);
+        console.error(" Error creating chat message:", error);
         return NextResponse.json(
             { error: "Failed to send message" },
             { status: 500 }

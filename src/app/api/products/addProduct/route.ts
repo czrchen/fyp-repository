@@ -20,7 +20,7 @@ export async function POST(req: Request) {
             variants = [],
         } = body;
 
-        // ✅ Validation
+        //  Validation
         if (!name || !sellerId || !categoryId) {
             return NextResponse.json(
                 { error: "Missing required fields" },
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
             );
         }
 
-        // 🧠 Common product fields
+        // Common product fields
         const baseData = {
             name,
             description: description || "",
@@ -46,10 +46,10 @@ export async function POST(req: Request) {
         };
 
         // -------------------------------
-        // 🧩 CASE 1: PRODUCT WITH VARIANTS
+        // CASE 1: PRODUCT WITH VARIANTS
         // -------------------------------
         if (variants.length > 0) {
-            // 1️⃣ Create parent product
+            // Create parent product
             const product = await prisma.product.create({
                 data: {
                     ...baseData,
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
                 },
             });
 
-            // 2️⃣ Create associated variants
+            // Create associated variants
             await prisma.productVariant.createMany({
                 data: variants.map((v: any) => ({
                     productId: product.id,
@@ -84,7 +84,7 @@ export async function POST(req: Request) {
         }
 
         // -------------------------------
-        // 🧩 CASE 2: SINGLE PRODUCT
+        // CASE 2: SINGLE PRODUCT
         // -------------------------------
         const product = await prisma.product.create({
             data: baseData,
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
             { status: 201 }
         );
     } catch (error: any) {
-        console.error("❌ Failed to add product:", error);
+        console.error("Failed to add product:", error);
         return NextResponse.json(
             { error: "Failed to add product", details: error.message },
             { status: 500 }

@@ -9,8 +9,9 @@ import React, {
 } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"; // optional for notifications
+import { se } from "date-fns/locale";
 
-// 🧩 Type definitions matching your Prisma models
+//  Type definitions matching your Prisma models
 export interface OrderItem {
   id: string;
   productId: string;
@@ -28,10 +29,12 @@ export interface OrderItem {
   rating?: number | null;
   feedback?: string | null;
   attributes?: Record<string, any> | null;
+  sellerName?: string;
 }
 
 export interface Order {
   id: string;
+  userId?: string;
   totalAmount: number;
   paymentMethod?: string | null;
   createdAt: string;
@@ -47,7 +50,7 @@ interface OrderContextType {
   fetchOrders: () => Promise<void>;
 }
 
-// 🧱 Create context
+// Create context
 const OrderContext = createContext<OrderContextType>({
   orders: [],
   isloading: false,
@@ -55,14 +58,14 @@ const OrderContext = createContext<OrderContextType>({
   fetchOrders: async () => {},
 });
 
-// 🧩 Provider implementation
+//  Provider implementation
 export function OrderProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isloading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ✅ Fetch all orders for logged-in user
+  //  Fetch all orders for logged-in user
   const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
@@ -81,10 +84,11 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
 
       const data = await res.json();
 
-      // 🧠 Map and format the data properly
+      // Map and format the data properly
       const formattedOrders: Order[] = (data.orders || []).map(
         (order: any) => ({
           id: order.id,
+          userId: order.userId,
           totalAmount: order.totalAmount,
           paymentMethod: order.paymentMethod,
           createdAt: order.createdAt,
@@ -107,13 +111,14 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
             rating: i.rating,
             feedback: i.feedback,
             attributes: i.attributes || {},
+            sellerName: i.seller.store_name,
           })),
         })
       );
 
       setOrders(formattedOrders);
     } catch (err: any) {
-      console.error("❌ Error fetching orders:", err);
+      console.error(" Error fetching orders:", err);
       setError(err.message || "Failed to load orders");
       toast.error("Failed to load orders");
     } finally {
@@ -121,7 +126,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session?.user?.id, status]);
 
-  // ✅ Auto-fetch orders on mount
+  //  Auto-fetch orders on mount
   useEffect(() => {
     fetchOrders();
   }, [session?.user?.id, status]);
@@ -133,5 +138,5 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// 🧩 Custom hook for easy access
+//  Custom hook for easy access
 export const useOrders = () => useContext(OrderContext);
