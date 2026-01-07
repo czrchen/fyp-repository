@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Store } from "lucide-react";
+import { Store, Eye, EyeOff } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { toast } from "sonner";
 import { useProfile } from "@/contexts/ProfileContext";
@@ -33,6 +33,8 @@ export default function AuthPage() {
   const [emailError, setEmailError] = useState("");
   const [isPasswordError, setisPasswordError] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   // Keep tab in sync with URL changes (so router.push works)
   useEffect(() => {
@@ -213,13 +215,30 @@ export default function AuthPage() {
                     <Label htmlFor="password" className="text-sm font-medium">
                       Password
                     </Label>
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      required
-                      placeholder="••••••••"
-                    />
+
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        placeholder="••••••••"
+                        className="pr-10"
+                      />
+
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label="Toggle password visibility"
+                      >
+                        {showPassword ? (
+                          <EyeOff size={18} />
+                        ) : (
+                          <Eye size={18} />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex justify-end">
@@ -300,13 +319,31 @@ export default function AuthPage() {
                 {/* PASSWORD */}
                 <div className="space-y-2">
                   <Label htmlFor="register-password">Password</Label>
-                  <Input
-                    id="register-password"
-                    name="register-password"
-                    type="password"
-                    required
-                    onChange={(e) => validatePassword(e.target.value)}
-                  />
+
+                  <div className="relative">
+                    <Input
+                      id="register-password"
+                      name="register-password"
+                      type={showRegisterPassword ? "text" : "password"}
+                      required
+                      className="pr-10"
+                      onChange={(e) => validatePassword(e.target.value)}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label="Toggle password visibility"
+                    >
+                      {showRegisterPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
+                  </div>
+
                   {passwordError && (
                     <p className="text-red-500 text-sm whitespace-pre-line">
                       {passwordError}

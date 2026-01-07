@@ -42,6 +42,7 @@ export type ProductSelectionResult = {
   variantName?: string | null;
   variantImage?: string | null;
   variantStock?: number;
+  productStock?: number;
 
   selectedAttributes: Record<string, string>;
 
@@ -155,7 +156,7 @@ export default function ProductSelectionModal({
       variantName: activeVariant?.name ?? null,
       variantImage: activeVariant?.imageUrl ?? null,
       variantStock: activeVariant?.stock,
-
+      productStock: product.stock ?? undefined,
       selectedAttributes,
       attributes: selectedAttributes,
 

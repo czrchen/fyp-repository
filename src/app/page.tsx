@@ -42,6 +42,12 @@ export default function HomePage() {
     refetchLocation,
     refetchTrending,
   } = useRecommenders();
+
+  const handleProfileCompleted = () => {
+    refetchRecommended();
+    refetchLocation();
+    refetchTrending();
+  };
   const { products, refetchProducts, productLoading } = useProducts();
   const { categories, isLoading } = useCategories();
   const [userLoading, setUserLoading] = useState(false);
@@ -196,7 +202,9 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {user && <ProfileCompletionModal />}
+      {user && (
+        <ProfileCompletionModal onProfileCompleted={handleProfileCompleted} />
+      )}
       <Navbar />
 
       {/* Hero */}

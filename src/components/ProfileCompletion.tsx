@@ -46,7 +46,11 @@ const incomeLevels = [
   "Over RM150,000",
 ];
 
-export default function ProfileCompletionModal() {
+export default function ({
+  onProfileCompleted,
+}: {
+  onProfileCompleted: () => void;
+}) {
   const { refreshProfile } = useProfile();
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -148,6 +152,7 @@ export default function ProfileCompletionModal() {
       toast.success("Profile completed successfully!");
 
       setOpen(false);
+      onProfileCompleted();
     } catch (err) {
       console.error(err);
       toast.error("Error updating profile. Please try again.");

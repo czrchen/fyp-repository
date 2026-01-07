@@ -74,38 +74,38 @@ export default function PaymentSuccessPage() {
           null
         );
 
-        // 2. Find session to get sellerId
-        const session = sessions.find((s) => s.id === chatSessionId);
-        const sellerId = session?.sellerId;
+        // // 2. Find session to get sellerId
+        // const session = sessions.find((s) => s.id === chatSessionId);
+        // const sellerId = session?.sellerId;
 
-        // 3. Fetch full cart
-        const refreshedCart = await fetch("/api/cart").then((r) => r.json());
+        // // 3. Fetch full cart
+        // const refreshedCart = await fetch("/api/cart").then((r) => r.json());
 
-        // 4. Filter items belonging to this seller
-        const sellerCartItems = refreshedCart.items.filter(
-          (item: any) => item.sellerId === sellerId
-        );
+        // // 4. Filter items belonging to this seller
+        // const sellerCartItems = refreshedCart.items.filter(
+        //   (item: any) => item.sellerId === sellerId
+        // );
 
-        // 5. Send correct cart bubble based on filtered items
-        if (sellerCartItems.length === 0) {
-          await sendMessage(
-            chatSessionId,
-            "Your cart is now empty for this store.",
-            "chatbot",
-            true,
-            "text",
-            null
-          );
-        } else {
-          await sendMessage(
-            chatSessionId,
-            "Here are your updated cart items:",
-            "chatbot",
-            true,
-            "cart_list",
-            sellerCartItems
-          );
-        }
+        // // 5. Send correct cart bubble based on filtered items
+        // if (sellerCartItems.length === 0) {
+        //   await sendMessage(
+        //     chatSessionId,
+        //     "Your cart is now empty for this store.",
+        //     "chatbot",
+        //     true,
+        //     "text",
+        //     null
+        //   );
+        // } else {
+        //   await sendMessage(
+        //     chatSessionId,
+        //     "Here are your updated cart items:",
+        //     "chatbot",
+        //     true,
+        //     "cart_list",
+        //     sellerCartItems
+        //   );
+        // }
       }
 
       router.push(returnUrl);

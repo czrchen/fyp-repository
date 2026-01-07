@@ -100,7 +100,7 @@ export default function MessagesPage() {
   } = useBuyerMessages();
 
   const router = useRouter();
-  const { orders } = useOrders();
+  const { orders, fetchOrders } = useOrders();
   const { items, addToCart, fetchCart } = useCart();
   const [orderListPage, setOrderListPage] = useState<Record<string, number>>(
     {}
@@ -152,6 +152,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     fetchCart();
+    fetchOrders();
   }, []);
 
   useEffect(() => {
@@ -480,7 +481,7 @@ export default function MessagesPage() {
   };
 
   const isOutOfStock = (item: ProductSelectionResult) => {
-    const availableStock = item.variantStock ?? (item as any)?.stock ?? 0;
+    const availableStock = item.variantStock ?? item.productStock ?? 0;
 
     const qty = item.quantity ?? 1;
 
