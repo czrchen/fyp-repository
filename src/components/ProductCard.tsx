@@ -149,31 +149,31 @@ export default function ProductCard({
         {/* Stats */}
         <div className="flex items-center gap-4 text-xs text-muted-foreground py-2 border-t border-border">
           {/* Views */}
-          <div className="flex items-center gap-1.5" title="Views">
+          {/* <div className="flex items-center gap-1.5" title="Views">
             <Eye className="h-3.5 w-3.5" />
             <span>{product.analytics?.views ?? 0}</span>
-          </div>
+          </div> */}
 
           {/* Stock */}
-          <div className="flex items-center gap-1.5" title="Sales">
+          {/* <div className="flex items-center gap-1.5" title="Sales">
             <Package className="h-3.5 w-3.5" />
             <span>{product.stock ?? 0}</span>
-          </div>
+          </div> */}
 
           {/* Sales */}
-          <div className="flex items-center gap-1.5" title="Sales">
+          {/* <div className="flex items-center gap-1.5" title="Sales">
             <ShoppingCart className="h-3.5 w-3.5" />
             <span>{product.analytics?.salesCount ?? 0}</span>
-          </div>
+          </div> */}
 
           {/* Rating */}
-          <div className="flex items-center gap-1.5" title="Rating">
+          {/* <div className="flex items-center gap-1.5" title="Rating">
             <Star className="h-3.5 w-3.5 fill-current" />
             <span>{(product.analytics?.ratingAvg ?? 0).toFixed(2)}</span>
             <span className="text-muted-foreground/60">
               ({product.analytics?.ratingCount ?? 0})
             </span>
-          </div>
+          </div> */}
         </div>
 
         {/*  Variants count */}

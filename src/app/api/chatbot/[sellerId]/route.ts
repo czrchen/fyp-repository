@@ -351,6 +351,8 @@ export async function POST(
         return s !== "completed";
     });
 
+    console.log("Active Order: ", activeOrders);
+
     if (!question) {
         return NextResponse.json(
             {

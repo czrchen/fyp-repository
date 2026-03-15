@@ -89,7 +89,7 @@ export default function AddProduct() {
   >([]);
 
   const [categories, setCategories] = useState<{ id: string; name: string }[]>(
-    []
+    [],
   );
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
@@ -99,6 +99,7 @@ export default function AddProduct() {
   const [subSearch, setSubSearch] = useState("");
   const [showMainList, setShowMainList] = useState(false);
   const [showSubList, setShowSubList] = useState(false);
+  let addNewMainCat = false;
 
   // ------------------------
   //  Fetch categories
@@ -117,6 +118,19 @@ export default function AddProduct() {
   }, []);
 
   useEffect(() => {
+    const fetchMainCategories = async () => {
+      try {
+        const res = await fetch("/api/category?level=main");
+        const data = await res.json();
+        setCategories(data);
+      } catch (err) {
+        toast.error(`Failed to load categories: ${err}`);
+      }
+    };
+    fetchMainCategories();
+  }, [addNewMainCat]);
+
+  useEffect(() => {
     const fetchSubs = async () => {
       if (!formData.categoryId) {
         setSubcategories([]);
@@ -124,7 +138,7 @@ export default function AddProduct() {
       }
       try {
         const res = await fetch(
-          `/api/category?parentId=${formData.categoryId}`
+          `/api/category?parentId=${formData.categoryId}`,
         );
         const data = await res.json();
         setSubcategories(data);
@@ -147,8 +161,9 @@ export default function AddProduct() {
       if (parentId) setSubcategories((prev) => [...prev, newCat]);
       else setCategories((prev) => [...prev, newCat]);
       toast.success(
-        `${parentId ? "Subcategory" : "Category"} "${name}" created`
+        `${parentId ? "Subcategory" : "Category"} "${name}" created`,
       );
+      addNewMainCat = true;
     } catch {
       toast.error("Failed to create category");
     }
@@ -326,7 +341,7 @@ export default function AddProduct() {
                   <div className="absolute z-10 w-full bg-card border border-border rounded-md mt-1 shadow max-h-56 overflow-y-auto">
                     {categories
                       .filter((c) =>
-                        c.name.toLowerCase().includes(mainSearch.toLowerCase())
+                        c.name.toLowerCase().includes(mainSearch.toLowerCase()),
                       )
                       .map((cat) => (
                         <div
@@ -334,7 +349,7 @@ export default function AddProduct() {
                           className={cn(
                             "px-3 py-2 hover:bg-muted cursor-pointer",
                             formData.categoryId === cat.id &&
-                              "bg-muted/60 font-medium"
+                              "bg-muted/60 font-medium",
                           )}
                           onClick={() => {
                             setFormData({
@@ -383,7 +398,9 @@ export default function AddProduct() {
                     <div className="absolute z-10 w-full bg-card border border-border rounded-md mt-1 shadow max-h-56 overflow-y-auto">
                       {subcategories
                         .filter((s) =>
-                          s.name.toLowerCase().includes(subSearch.toLowerCase())
+                          s.name
+                            .toLowerCase()
+                            .includes(subSearch.toLowerCase()),
                         )
                         .map((sub) => (
                           <div
@@ -391,7 +408,7 @@ export default function AddProduct() {
                             className={cn(
                               "px-3 py-2 hover:bg-muted cursor-pointer",
                               formData.subcategoryId === sub.id &&
-                                "bg-muted/60 font-medium"
+                                "bg-muted/60 font-medium",
                             )}
                             onClick={() => {
                               setFormData({
@@ -438,7 +455,9 @@ export default function AddProduct() {
                   <div className="absolute z-10 w-full bg-card border border-border rounded-md mt-1 shadow max-h-56 overflow-y-auto">
                     {brands
                       .filter((b) =>
-                        b.name.toLowerCase().includes(brandSearch.toLowerCase())
+                        b.name
+                          .toLowerCase()
+                          .includes(brandSearch.toLowerCase()),
                       )
                       .map((brand) => (
                         <div
@@ -446,7 +465,7 @@ export default function AddProduct() {
                           className={cn(
                             "px-3 py-2 hover:bg-muted cursor-pointer",
                             formData.brandId === brand.id &&
-                              "bg-muted/60 font-medium"
+                              "bg-muted/60 font-medium",
                           )}
                           onClick={() => {
                             setFormData({ ...formData, brandId: brand.id });
@@ -576,7 +595,7 @@ export default function AddProduct() {
                                               };
                                               const updatedValues =
                                                 attrValues.filter(
-                                                  (_, i) => i !== optionIndex
+                                                  (_, i) => i !== optionIndex,
                                                 );
                                               attrs[attrName] = updatedValues;
                                               variantCopy.attributes = attrs;
@@ -612,7 +631,7 @@ export default function AddProduct() {
                                           ...variantCopy.attributes,
                                         };
                                         const existingValues = Array.isArray(
-                                          attrs[attrName]
+                                          attrs[attrName],
                                         )
                                           ? attrs[attrName]
                                           : [];
@@ -634,7 +653,7 @@ export default function AddProduct() {
                                     onClick={(e) => {
                                       const input =
                                         e.currentTarget.parentElement?.querySelector(
-                                          "input"
+                                          "input",
                                         );
                                       if (input && input.value.trim()) {
                                         const newValue = input.value.trim();
@@ -644,7 +663,7 @@ export default function AddProduct() {
                                           ...variantCopy.attributes,
                                         };
                                         const existingValues = Array.isArray(
-                                          attrs[attrName]
+                                          attrs[attrName],
                                         )
                                           ? attrs[attrName]
                                           : [];
@@ -663,7 +682,7 @@ export default function AddProduct() {
                                   </Button>
                                 </div>
                               </div>
-                            )
+                            ),
                           )}
 
                           {/* Add New Attribute */}
@@ -687,7 +706,7 @@ export default function AddProduct() {
                           </Button>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-3 gap-3 items-start">
                           <Input
                             type="number"
                             placeholder="Price"
@@ -698,6 +717,7 @@ export default function AddProduct() {
                               setVariants(updated);
                             }}
                           />
+
                           <Input
                             type="number"
                             placeholder="Stock"
@@ -708,13 +728,30 @@ export default function AddProduct() {
                               setVariants(updated);
                             }}
                           />
-                          <ImageUploader
-                            onUploaded={(url) => {
-                              const updated = [...variants];
-                              updated[index].imageUrl = url;
-                              setVariants(updated);
-                            }}
-                          />
+
+                          {/* Image column */}
+                          <div className="flex flex-col gap-2">
+                            <ImageUploader
+                              onUploaded={(url) => {
+                                setVariants((prev) => {
+                                  const copy = [...prev];
+                                  copy[index] = {
+                                    ...copy[index],
+                                    imageUrl: url,
+                                  };
+                                  return copy;
+                                });
+                              }}
+                            />
+
+                            {variant.imageUrl && (
+                              <img
+                                src={variant.imageUrl}
+                                alt="Variant preview"
+                                className="w-24 h-24 object-cover rounded-md border"
+                              />
+                            )}
+                          </div>
                         </div>
 
                         <Button
@@ -818,7 +855,7 @@ export default function AddProduct() {
                     <Label className="font-medium">Attributes</Label>
 
                     {Object.entries(
-                      JSON.parse(formData.attributes || "{}")
+                      JSON.parse(formData.attributes || "{}"),
                     ).map(([attrName, attrValues], index) => (
                       <div
                         key={index}
@@ -833,7 +870,7 @@ export default function AddProduct() {
                             }
                             onChange={(e) => {
                               const attrs = JSON.parse(
-                                formData.attributes || "{}"
+                                formData.attributes || "{}",
                               );
                               const currentValues = attrs[attrName];
                               delete attrs[attrName];
@@ -850,7 +887,7 @@ export default function AddProduct() {
                             size="icon"
                             onClick={() => {
                               const attrs = JSON.parse(
-                                formData.attributes || "{}"
+                                formData.attributes || "{}",
                               );
                               delete attrs[attrName];
                               setFormData({
@@ -877,10 +914,10 @@ export default function AddProduct() {
                                     className="text-xs text-destructive"
                                     onClick={() => {
                                       const attrs = JSON.parse(
-                                        formData.attributes || "{}"
+                                        formData.attributes || "{}",
                                       );
                                       const updatedValues = attrValues.filter(
-                                        (_, i) => i !== valIndex
+                                        (_, i) => i !== valIndex,
                                       );
                                       attrs[attrName] = updatedValues;
                                       setFormData({
@@ -910,10 +947,10 @@ export default function AddProduct() {
                                 e.preventDefault();
                                 const newValue = e.currentTarget.value.trim();
                                 const attrs = JSON.parse(
-                                  formData.attributes || "{}"
+                                  formData.attributes || "{}",
                                 );
                                 const existingValues = Array.isArray(
-                                  attrs[attrName]
+                                  attrs[attrName],
                                 )
                                   ? attrs[attrName]
                                   : [];
@@ -933,15 +970,15 @@ export default function AddProduct() {
                             onClick={(e) => {
                               const input =
                                 e.currentTarget.parentElement?.querySelector(
-                                  "input"
+                                  "input",
                                 );
                               if (input && input.value.trim()) {
                                 const newValue = input.value.trim();
                                 const attrs = JSON.parse(
-                                  formData.attributes || "{}"
+                                  formData.attributes || "{}",
                                 );
                                 const existingValues = Array.isArray(
-                                  attrs[attrName]
+                                  attrs[attrName],
                                 )
                                   ? attrs[attrName]
                                   : [];

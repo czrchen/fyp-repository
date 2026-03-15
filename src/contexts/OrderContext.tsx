@@ -17,8 +17,24 @@ export interface OrderItem {
   productId: string;
   variantId?: string | null;
   sellerId: string;
-  name: string;
+
+  // 👇 NEW
+  product?: {
+    name: string;
+    imageUrl?: string | null;
+  };
+
+  variant?: {
+    id: string;
+    name: string;
+    imageUrl?: string | null;
+    attributes?: Record<string, any>;
+  };
+
+  // fallback snapshot
+  name?: string;
   imageUrl?: string | null;
+
   price: number;
   quantity: number;
   subtotal: number;
@@ -99,8 +115,27 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
             productId: i.productId,
             variantId: i.variantId,
             sellerId: i.sellerId,
-            name: i.product.name,
-            imageUrl: i.product.imageUrl,
+
+            // ✅ PRESERVE PRODUCT RELATION
+            product: {
+              name: i.product?.name,
+              imageUrl: i.product?.imageUrl,
+            },
+
+            // ✅ PRESERVE VARIANT RELATION (IF EXISTS)
+            variant: i.variant
+              ? {
+                  id: i.variant.id,
+                  name: i.variant.name,
+                  imageUrl: i.variant.imageUrl,
+                  attributes: i.variant.attributes,
+                }
+              : null,
+
+            // ✅ FALLBACK SNAPSHOT (for deleted variant/product)
+            name: i.name,
+            imageUrl: i.imageUrl,
+
             price: i.price,
             quantity: i.quantity,
             subtotal: i.subtotal,
@@ -113,7 +148,7 @@ export function OrderProvider({ children }: { children: React.ReactNode }) {
             attributes: i.attributes || {},
             sellerName: i.seller.store_name,
           })),
-        })
+        }),
       );
 
       setOrders(formattedOrders);

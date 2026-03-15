@@ -379,145 +379,159 @@ export default function SellerAnalytics() {
                           }`}
                         >
                           <div className="space-y-4">
-                            {filteredItems.map((item) => (
-                              <div
-                                key={item.id}
-                                className="group relative flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
-                              >
-                                {/* LEFT SIDE */}
-                                <div className="flex items-center gap-4 flex-1">
-                                  <img
-                                    src={item.imageUrl || "/placeholder.png"}
-                                    alt={item.product.name}
-                                    className="w-20 h-20 object-cover rounded-lg shadow-sm"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium">
-                                      {item.product.name}
-                                    </p>
-                                    {item.attributes &&
-                                      Object.keys(item.attributes).length >
-                                        0 && (
-                                        <p className="text-sm text-muted-foreground">
-                                          (
-                                          {Object.entries(item.attributes)
-                                            .map(
-                                              ([key, val]) => `${key}: ${val}`
+                            {filteredItems.map((item) => {
+                              const displayName =
+                                item.variant?.name ??
+                                item.product?.name ??
+                                "Unnamed Product";
+
+                              const displayImage =
+                                item.variant?.imageUrl ??
+                                item.imageUrl ??
+                                item.product?.imageUrl ??
+                                "/placeholder.png";
+
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="group relative flex justify-between items-center border border-gray-200 rounded-xl p-4 bg-white hover:shadow-lg hover:border-gray-300 transition-all duration-200"
+                                >
+                                  {/* LEFT SIDE */}
+                                  <div className="flex items-center gap-4 flex-1">
+                                    <img
+                                      src={displayImage}
+                                      alt={displayName}
+                                      className="w-20 h-20 object-cover rounded-lg shadow-sm"
+                                    />
+
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium truncate">
+                                        {displayName}
+                                      </p>
+
+                                      {item.attributes &&
+                                        Object.keys(item.attributes).length >
+                                          0 && (
+                                          <p className="text-sm text-muted-foreground">
+                                            (
+                                            {Object.entries(item.attributes)
+                                              .map(
+                                                ([key, val]) => `${key}: ${val}`
+                                              )
+                                              .join(", ")}
                                             )
-                                            .join(", ")}
-                                          )
-                                        </p>
-                                      )}
-                                    <div className="flex items-center gap-3 text-sm text-gray-600">
-                                      <span>
-                                        <span className="font-medium">
-                                          Qty:
-                                        </span>{" "}
-                                        {item.quantity}
-                                      </span>
-                                      <span className="text-gray-300">•</span>
-                                      <span>RM {item.price.toFixed(2)}</span>
-                                    </div>
-                                  </div>
-                                </div>
+                                          </p>
+                                        )}
 
-                                {/* RIGHT SIDE */}
-                                <div className="flex items-center gap-6 ml-4">
-                                  <div className="text-right">
-                                    <div className="text-xs text-gray-500 mb-1">
-                                      Total
-                                    </div>
-                                    <div className="text-xl font-bold text-gray-900">
-                                      RM{" "}
-                                      {(item.price * item.quantity).toFixed(2)}
+                                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                                        <span>
+                                          <span className="font-medium">
+                                            Qty:
+                                          </span>{" "}
+                                          {item.quantity}
+                                        </span>
+                                        <span className="text-gray-300">•</span>
+                                        <span>RM {item.price.toFixed(2)}</span>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Status Control */}
-                                  <div className="flex flex-col gap-2 w-40">
-                                    <select
-                                      value={
-                                        localStatus[item.id] ?? item.status
-                                      }
-                                      onChange={(e) => {
-                                        const newStatus = e.target.value;
+                                  {/* RIGHT SIDE */}
+                                  <div className="flex items-center gap-6 ml-4">
+                                    <div className="text-right">
+                                      <div className="text-xs text-gray-500 mb-1">
+                                        Total
+                                      </div>
+                                      <div className="text-xl font-bold text-gray-900">
+                                        RM{" "}
+                                        {(item.price * item.quantity).toFixed(
+                                          2
+                                        )}
+                                      </div>
+                                    </div>
 
-                                        if (newStatus === "Delivered") {
-                                          setPendingDeliveredItem({
-                                            orderId: order.orderId,
-                                            itemId: item.id,
-                                            productId: item.productId,
-                                            productName: item.product.name,
-                                            imageUrl: item.imageUrl
-                                              ? item.imageUrl
-                                              : "",
-                                            attributes: item.attributes
-                                              ? item.attributes
-                                              : {},
-                                          });
-                                          setShowDeliveredModal(true);
-                                          return;
+                                    {/* Status Control */}
+                                    <div className="flex flex-col gap-2 w-40">
+                                      <select
+                                        value={
+                                          localStatus[item.id] ?? item.status
                                         }
+                                        onChange={(e) => {
+                                          const newStatus = e.target.value;
 
-                                        setLocalStatus((prev) => ({
-                                          ...prev,
-                                          [item.id]: newStatus,
-                                        }));
-                                      }}
-                                      className="w-full px-3 py-2 text-sm rounded-lg border bg-white text-gray-700"
-                                    >
-                                      <option
-                                        value="Pending"
-                                        disabled={item.status !== "Pending"}
-                                      >
-                                        Pending
-                                      </option>
-                                      <option
-                                        value="Delivered"
-                                        disabled={item.status === "Received"}
-                                      >
-                                        Delivered
-                                      </option>
-                                      <option
-                                        value="Received"
-                                        disabled={item.status === "Pending"}
-                                      >
-                                        Received
-                                      </option>
-                                      <option
-                                        value="Cancelled"
-                                        disabled={item.status !== "Pending"}
-                                      >
-                                        Cancelled
-                                      </option>
-                                    </select>
+                                          if (newStatus === "Delivered") {
+                                            setPendingDeliveredItem({
+                                              orderId: order.orderId,
+                                              itemId: item.id,
+                                              productId: item.productId,
+                                              productName: displayName,
+                                              imageUrl: displayImage,
+                                              attributes: item.attributes ?? {},
+                                            });
+                                            setShowDeliveredModal(true);
+                                            return;
+                                          }
 
-                                    <button
-                                      onClick={() =>
-                                        handleStatusChange(
-                                          item,
-                                          order.orderId,
-                                          item.id,
-                                          localStatus[item.id] ?? item.status,
-                                          item?.estimatedDays
-                                        )
-                                      }
-                                      disabled={
-                                        buttonState[item.id] === "loading" ||
-                                        showDeliveredModal
-                                      }
-                                      className="w-full text-sm font-medium px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50"
-                                    >
-                                      {buttonState[item.id] === "loading"
-                                        ? "Updating..."
-                                        : buttonState[item.id] === "success"
-                                        ? "Updated ✓"
-                                        : "Update Status"}
-                                    </button>
+                                          setLocalStatus((prev) => ({
+                                            ...prev,
+                                            [item.id]: newStatus,
+                                          }));
+                                        }}
+                                        className="w-full px-3 py-2 text-sm rounded-lg border bg-white text-gray-700"
+                                      >
+                                        <option
+                                          value="Pending"
+                                          disabled={item.status !== "Pending"}
+                                        >
+                                          Pending
+                                        </option>
+                                        <option
+                                          value="Delivered"
+                                          disabled={item.status === "Received"}
+                                        >
+                                          Delivered
+                                        </option>
+                                        <option
+                                          value="Received"
+                                          disabled={item.status === "Pending"}
+                                        >
+                                          Received
+                                        </option>
+                                        <option
+                                          value="Cancelled"
+                                          disabled={item.status !== "Pending"}
+                                        >
+                                          Cancelled
+                                        </option>
+                                      </select>
+
+                                      <button
+                                        onClick={() =>
+                                          handleStatusChange(
+                                            item,
+                                            order.orderId,
+                                            item.id,
+                                            localStatus[item.id] ?? item.status,
+                                            item?.estimatedDays
+                                          )
+                                        }
+                                        disabled={
+                                          buttonState[item.id] === "loading" ||
+                                          showDeliveredModal
+                                        }
+                                        className="w-full text-sm font-medium px-4 py-2 bg-black text-white rounded-lg disabled:opacity-50"
+                                      >
+                                        {buttonState[item.id] === "loading"
+                                          ? "Updating..."
+                                          : buttonState[item.id] === "success"
+                                          ? "Updated ✓"
+                                          : "Update Status"}
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </div>

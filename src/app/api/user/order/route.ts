@@ -27,8 +27,9 @@ export async function GET() {
             include: {
                 items: {
                     include: {
-                        product: { select: { name: true, imageUrl: true } },
-                        seller: { select: { store_name: true } },
+                        product: true,
+                        variant: true, // 🔴 REQUIRED
+                        seller: true,
                     },
                 },
             },

@@ -510,108 +510,120 @@ const Profile = () => {
                                   }`}
                                 >
                                   <div className="space-y-3">
-                                    {filteredItems.map((item) => (
-                                      <div
-                                        key={item.id}
-                                        className="flex items-center justify-between border rounded-md p-3 bg-muted/50"
-                                      >
-                                        {/* LEFT: Product info */}
-                                        <div className="flex items-center gap-3">
-                                          <img
-                                            src={
-                                              item.imageUrl ||
-                                              "/placeholder.png"
-                                            }
-                                            alt={item.name}
-                                            className="w-16 h-16 object-cover rounded"
-                                          />
+                                    {filteredItems.map((item) => {
+                                      const displayName =
+                                        item.variant?.name ??
+                                        item.product?.name ??
+                                        item.name ??
+                                        "Unnamed Product";
 
-                                          <div>
-                                            <p className="font-medium">
-                                              {item.name}
-                                            </p>
+                                      const displayImage =
+                                        item.variant?.imageUrl ??
+                                        item.imageUrl ??
+                                        item.product?.imageUrl ??
+                                        "/placeholder.png";
 
-                                            {item.attributes &&
-                                              Object.keys(item.attributes)
-                                                .length > 0 && (
-                                                <p className="text-sm text-muted-foreground">
-                                                  (
-                                                  {Object.entries(
-                                                    item.attributes
-                                                  )
-                                                    .map(
-                                                      ([key, val]) =>
-                                                        `${key}: ${val}`
+                                      return (
+                                        <div
+                                          key={item.id}
+                                          className="flex items-center justify-between border rounded-md p-3 bg-muted/50"
+                                        >
+                                          {/* LEFT: Product info */}
+                                          <div className="flex items-center gap-3">
+                                            <img
+                                              src={displayImage}
+                                              alt={displayName}
+                                              className="w-16 h-16 object-cover rounded"
+                                            />
+
+                                            <div>
+                                              <p className="font-medium">
+                                                {displayName}
+                                              </p>
+
+                                              {item.attributes &&
+                                                Object.keys(item.attributes)
+                                                  .length > 0 && (
+                                                  <p className="text-sm text-muted-foreground">
+                                                    (
+                                                    {Object.entries(
+                                                      item.attributes
                                                     )
-                                                    .join(", ")}
-                                                  )
-                                                </p>
-                                              )}
+                                                      .map(
+                                                        ([key, val]) =>
+                                                          `${key}: ${val}`
+                                                      )
+                                                      .join(", ")}
+                                                    )
+                                                  </p>
+                                                )}
 
-                                            <p className="text-sm text-muted-foreground">
-                                              Qty: {item.quantity} × RM{" "}
-                                              {item.price.toFixed(2)}
+                                              <p className="text-sm text-muted-foreground">
+                                                Qty: {item.quantity} × RM{" "}
+                                                {item.price.toFixed(2)}
+                                              </p>
+
+                                              <Badge
+                                                variant={
+                                                  item.status === "Delivered"
+                                                    ? "default"
+                                                    : "outline"
+                                                }
+                                                className="mt-2"
+                                              >
+                                                {item.status}
+                                              </Badge>
+                                            </div>
+                                          </div>
+
+                                          {/* RIGHT: Price + Contact Seller */}
+                                          <div className="flex flex-col items-end gap-2">
+                                            <p className="font-semibold flex">
+                                              RM{" "}
+                                              {(
+                                                item.price * item.quantity
+                                              ).toFixed(2)}
                                             </p>
 
-                                            <Badge
-                                              variant={
-                                                item.status === "Delivered"
-                                                  ? "default"
-                                                  : "outline"
-                                              }
-                                              className="mt-2"
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={async (e) => {
+                                                e.stopPropagation();
+
+                                                const res = await fetch(
+                                                  "/api/messages/start",
+                                                  {
+                                                    method: "POST",
+                                                    headers: {
+                                                      "Content-Type":
+                                                        "application/json",
+                                                    },
+                                                    body: JSON.stringify({
+                                                      sellerId: item.sellerId,
+                                                    }),
+                                                  }
+                                                );
+
+                                                const data = await res.json();
+
+                                                if (data.sessionId) {
+                                                  await refetchSessions();
+                                                  router.push(
+                                                    `/messages?seller=${encodeURIComponent(
+                                                      item.sellerName ??
+                                                        "seller"
+                                                    )}`
+                                                  );
+                                                }
+                                              }}
                                             >
-                                              {item.status}
-                                            </Badge>
+                                              Contact Seller
+                                            </Button>
                                           </div>
                                         </div>
-
-                                        {/* RIGHT: Price + Contact Seller */}
-                                        <div className="flex flex-col items-end gap-2">
-                                          <p className="font-semibold flex">
-                                            RM{" "}
-                                            {(
-                                              item.price * item.quantity
-                                            ).toFixed(2)}
-                                          </p>
-
-                                          <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={async (e) => {
-                                              e.stopPropagation(); // ⛔ prevent collapsing order
-
-                                              const res = await fetch(
-                                                "/api/messages/start",
-                                                {
-                                                  method: "POST",
-                                                  headers: {
-                                                    "Content-Type":
-                                                      "application/json",
-                                                  },
-                                                  body: JSON.stringify({
-                                                    sellerId: item.sellerId,
-                                                  }),
-                                                }
-                                              );
-
-                                              const data = await res.json();
-
-                                              if (data.sessionId) {
-                                                await refetchSessions();
-                                                router.push(
-                                                  `/messages?seller=${encodeURIComponent(
-                                                    item.sellerName ?? "seller"
-                                                  )}`
-                                                );
-                                              }
-                                            }}
-                                          >
-                                            Contact Seller
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               </div>

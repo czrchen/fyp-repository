@@ -103,7 +103,7 @@ export default function MessagesPage() {
   const { orders, fetchOrders } = useOrders();
   const { items, addToCart, fetchCart } = useCart();
   const [orderListPage, setOrderListPage] = useState<Record<string, number>>(
-    {}
+    {},
   );
   const [productListPage, setProductListPage] = useState<
     Record<string, number>
@@ -177,7 +177,7 @@ export default function MessagesPage() {
   const scrollToBottom = () => {
     if (!scrollRef.current) return;
     const viewport = scrollRef.current.querySelector(
-      "[data-radix-scroll-area-viewport]"
+      "[data-radix-scroll-area-viewport]",
     ) as HTMLDivElement | null;
     if (viewport) {
       viewport.scrollTop = viewport.scrollHeight;
@@ -193,7 +193,7 @@ export default function MessagesPage() {
     if (!sellerName || sessions.length === 0) return;
 
     const match = sessions.find(
-      (s) => s.sellerName.toLowerCase() === sellerName.toLowerCase()
+      (s) => s.sellerName.toLowerCase() === sellerName.toLowerCase(),
     );
 
     if (!match) return;
@@ -224,13 +224,13 @@ export default function MessagesPage() {
         .map((i) => ({
           orderId: order.id,
           productId: i.productId,
-          productName: i.name,
-          imageUrl: i.imageUrl,
+          productName: i.name || i.product?.name || "Unknown Product",
+          imageUrl: i.imageUrl || i.product?.imageUrl || null,
           attributes: i.attributes,
           status: i.status,
           deliveredAt: i.deliveredAt,
           estimatedDays: i.estimatedDays,
-        }))
+        })),
     );
   }, [orders, activeSession?.sellerId]);
 
@@ -239,16 +239,19 @@ export default function MessagesPage() {
     sessions.find((s) => s.id === activeSession?.id)?.messages || [];
 
   // Group by date for day dividers
-  const groupedMessages = currentMessages.reduce((groups, message: any) => {
-    const date = format(new Date(message.createdAt), "yyyy-MM-dd");
-    if (!groups[date]) groups[date] = [];
-    groups[date].push(message);
-    return groups;
-  }, {} as Record<string, any[]>);
+  const groupedMessages = currentMessages.reduce(
+    (groups, message: any) => {
+      const date = format(new Date(message.createdAt), "yyyy-MM-dd");
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(message);
+      return groups;
+    },
+    {} as Record<string, any[]>,
+  );
 
   // Filter sessions by seller name
   const filteredSessions = sessions.filter((session) =>
-    session.sellerName?.toLowerCase().includes(searchTerm.toLowerCase())
+    session.sellerName?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   /**
@@ -291,7 +294,7 @@ export default function MessagesPage() {
             "chatbot",
             true,
             "text",
-            null
+            null,
           );
         }
       } else if (type === "product_list") {
@@ -301,7 +304,7 @@ export default function MessagesPage() {
           "chatbot",
           true,
           "product_list",
-          payload
+          payload,
         );
       } else if (type === "order_list") {
         await sendMessage(
@@ -310,7 +313,7 @@ export default function MessagesPage() {
           "chatbot",
           true,
           "order_list",
-          payload
+          payload,
         );
       } else if (type === "order_detail") {
         await sendMessage(
@@ -319,7 +322,7 @@ export default function MessagesPage() {
           "chatbot",
           true,
           "order_detail",
-          payload
+          payload,
         );
       } else if (type === "cart_list") {
         await sendMessage(
@@ -328,7 +331,7 @@ export default function MessagesPage() {
           "chatbot",
           true,
           "cart_list",
-          payload
+          payload,
         );
       }
     } catch (error) {
@@ -339,7 +342,7 @@ export default function MessagesPage() {
         "chatbot",
         true,
         "text",
-        null
+        null,
       );
     } finally {
       typingRef.current = false;
@@ -362,7 +365,7 @@ export default function MessagesPage() {
         "buyer",
         false,
         "text",
-        null
+        null,
       );
     }
   };
@@ -379,7 +382,7 @@ export default function MessagesPage() {
 
   const openSelectionModal = (
     messageId: string,
-    product: RecommendedProduct
+    product: RecommendedProduct,
   ) => {
     setSelectionModal({
       open: true,
@@ -419,9 +422,15 @@ export default function MessagesPage() {
   const toggleProductSelection = (
     messageId: string,
     product: RecommendedProduct,
-    isSelected: boolean
+    isSelected: boolean,
   ) => {
     if (isSelected) {
+      console.log("[UNSELECT PRODUCT]", {
+        messageId,
+        product: product,
+        productId: product.id,
+        productName: product.name,
+      });
       // unselect
       setSelectedProducts((prev) => {
         const msgSelections = { ...(prev[messageId] ?? {}) };
@@ -439,6 +448,12 @@ export default function MessagesPage() {
         };
       });
     } else {
+      console.log("[SELECT PRODUCT - OPEN MODAL]", {
+        messageId,
+        product: product,
+        productId: product.id,
+        productName: product.name,
+      });
       // need to choose variant/attributes first
       openSelectionModal(messageId, product);
     }
@@ -447,7 +462,7 @@ export default function MessagesPage() {
   const toggleCartSelection = (
     messageId: string,
     item: CartSelectableProduct,
-    isSelected: boolean
+    isSelected: boolean,
   ) => {
     setSelectedCartProducts((prev) => {
       const msgSelections = { ...(prev[messageId] ?? {}) };
@@ -503,7 +518,7 @@ export default function MessagesPage() {
         "chatbot",
         true,
         "text",
-        null
+        null,
       );
       return;
     }
@@ -537,7 +552,7 @@ export default function MessagesPage() {
               "chatbot",
               true,
               "text",
-              null
+              null,
             );
           } else {
             await sendMessage(
@@ -546,7 +561,7 @@ export default function MessagesPage() {
               "chatbot",
               true,
               "text",
-              null
+              null,
             );
           }
           continue; // do NOT update local cart
@@ -590,7 +605,7 @@ export default function MessagesPage() {
           "chatbot",
           false,
           "text",
-          null
+          null,
         );
       } catch (err) {
         toast.error(`Cart add failed: ${err}`);
@@ -601,7 +616,7 @@ export default function MessagesPage() {
           "chatbot",
           true,
           "text",
-          null
+          null,
         );
       }
     }
@@ -622,7 +637,7 @@ export default function MessagesPage() {
       variantId: item.variantId,
       name: item.variantName ?? item.name,
       price: item.finalPrice ?? item.price,
-      imageUrl: item.variantImage ?? item.imageUrl,
+      image: item.variantImage ?? item.imageUrl,
       attributes: item.selectedAttributes ?? {},
       quantity: item.quantity ?? 1,
       sellerId: item.sellerId,
@@ -751,8 +766,8 @@ export default function MessagesPage() {
                                 {isToday(new Date(date))
                                   ? "Today"
                                   : isYesterday(new Date(date))
-                                  ? "Yesterday"
-                                  : format(new Date(date), "d MMM yyyy")}
+                                    ? "Yesterday"
+                                    : format(new Date(date), "d MMM yyyy")}
                               </div>
 
                               {/* Message list */}
@@ -773,7 +788,7 @@ export default function MessagesPage() {
 
                                     const PRODUCTS_PER_PAGE = 2;
                                     const totalPages = Math.ceil(
-                                      products.length / PRODUCTS_PER_PAGE
+                                      products.length / PRODUCTS_PER_PAGE,
                                     );
 
                                     const page = productListPage[m.id] ?? 0;
@@ -788,7 +803,7 @@ export default function MessagesPage() {
                                     const start = page * PRODUCTS_PER_PAGE;
                                     const currentProducts = products.slice(
                                       start,
-                                      start + PRODUCTS_PER_PAGE
+                                      start + PRODUCTS_PER_PAGE,
                                     );
 
                                     const selectedInThisMessage =
@@ -851,13 +866,13 @@ export default function MessagesPage() {
                                               Object.keys(selectedAttrsRaw)
                                                 .length > 0
                                                 ? Object.entries(
-                                                    selectedAttrsRaw
+                                                    selectedAttrsRaw,
                                                   )
                                                     .map(
                                                       ([key, val]) =>
                                                         `${key}: ${
                                                           val as string
-                                                        }`
+                                                        }`,
                                                     )
                                                     .join(", ")
                                                 : null;
@@ -883,7 +898,7 @@ export default function MessagesPage() {
                                                       toggleProductSelection(
                                                         m.id,
                                                         product,
-                                                        isSelected
+                                                        isSelected,
                                                       );
                                                     }}
                                                     className="h-4 w-4 cursor-pointer"
@@ -896,7 +911,7 @@ export default function MessagesPage() {
                                                   onClick={() =>
                                                     window.open(
                                                       `/product/${product.id}`,
-                                                      "_blank"
+                                                      "_blank",
                                                     )
                                                   }
                                                 >
@@ -963,7 +978,7 @@ export default function MessagesPage() {
                                                       <span className="text-sm font-bold text-primary">
                                                         RM{" "}
                                                         {displayPrice.toFixed(
-                                                          2
+                                                          2,
                                                         )}
                                                       </span>
 
@@ -1106,7 +1121,7 @@ export default function MessagesPage() {
                                     const ORDERS_PER_PAGE = 4;
                                     const orderIds = Object.keys(grouped);
                                     const totalPages = Math.ceil(
-                                      orderIds.length / ORDERS_PER_PAGE
+                                      orderIds.length / ORDERS_PER_PAGE,
                                     );
 
                                     const page = orderListPage[m.id] ?? 0;
@@ -1121,7 +1136,7 @@ export default function MessagesPage() {
                                     const start = page * ORDERS_PER_PAGE;
                                     const currentOrderIds = orderIds.slice(
                                       start,
-                                      start + ORDERS_PER_PAGE
+                                      start + ORDERS_PER_PAGE,
                                     );
 
                                     bubbleContent = (
@@ -1254,10 +1269,10 @@ export default function MessagesPage() {
                                     Array.isArray(m.payload)
                                   ) {
                                     const items = m.payload as ChatbotOrder[];
-
+                                    // console.log("Items: ", items);
                                     const DETAILS_PER_PAGE = 3;
                                     const totalPages = Math.ceil(
-                                      items.length / DETAILS_PER_PAGE
+                                      items.length / DETAILS_PER_PAGE,
                                     );
 
                                     const page = orderListPage[m.id] ?? 0;
@@ -1272,7 +1287,7 @@ export default function MessagesPage() {
                                     const start = page * DETAILS_PER_PAGE;
                                     const currentItems = items.slice(
                                       start,
-                                      start + DETAILS_PER_PAGE
+                                      start + DETAILS_PER_PAGE,
                                     );
 
                                     bubbleContent = (
@@ -1312,11 +1327,11 @@ export default function MessagesPage() {
                                                 {item.attributes && (
                                                   <p className="text-xs text-muted-foreground">
                                                     {Object.entries(
-                                                      item.attributes
+                                                      item.attributes,
                                                     )
                                                       .map(
                                                         ([key, val]) =>
-                                                          `${key}: ${val}`
+                                                          `${key}: ${val}`,
                                                       )
                                                       .join(", ")}
                                                   </p>
@@ -1406,7 +1421,7 @@ export default function MessagesPage() {
 
                                     const ITEMS_PER_PAGE = 3;
                                     const totalPages = Math.ceil(
-                                      cartItems.length / ITEMS_PER_PAGE
+                                      cartItems.length / ITEMS_PER_PAGE,
                                     );
 
                                     const page = productListPage[m.id] ?? 0;
@@ -1421,7 +1436,7 @@ export default function MessagesPage() {
                                     const start = page * ITEMS_PER_PAGE;
                                     const currentItems = cartItems.slice(
                                       start,
-                                      start + ITEMS_PER_PAGE
+                                      start + ITEMS_PER_PAGE,
                                     );
 
                                     const selectedInCart =
@@ -1466,13 +1481,13 @@ export default function MessagesPage() {
                                               Object.keys(attrs).length > 0
                                                 ? Object.entries(attrs)
                                                     .map(
-                                                      ([k, v]) => `${k}: ${v}`
+                                                      ([k, v]) => `${k}: ${v}`,
                                                     )
                                                     .join(", ")
                                                 : null;
 
                                             const isSelected = Boolean(
-                                              selectedInCart[item.id]
+                                              selectedInCart[item.id],
                                             );
 
                                             return (
@@ -1505,7 +1520,7 @@ export default function MessagesPage() {
                                                           quantity:
                                                             item.quantity,
                                                         },
-                                                        isSelected
+                                                        isSelected,
                                                       );
                                                     }}
                                                     className="h-4 w-4 cursor-pointer"
@@ -1693,11 +1708,11 @@ export default function MessagesPage() {
                                                 {item.attributes && (
                                                   <p className="text-xs text-muted-foreground">
                                                     {Object.entries(
-                                                      item.attributes
+                                                      item.attributes,
                                                     )
                                                       .map(
                                                         ([key, val]) =>
-                                                          `${key}: ${val}`
+                                                          `${key}: ${val}`,
                                                       )
                                                       .join(", ")}
                                                   </p>
@@ -1766,7 +1781,7 @@ export default function MessagesPage() {
                                         <span className="text-[11px] text-gray-500 absolute bottom-1.5 right-3">
                                           {format(
                                             new Date(m.createdAt),
-                                            "h:mm a"
+                                            "h:mm a",
                                           )}
                                         </span>
                                       </div>
@@ -1796,7 +1811,7 @@ export default function MessagesPage() {
                                 </div>
                               )}
                             </div>
-                          )
+                          ),
                         )}
                       </div>
                     </ScrollArea>
@@ -1847,7 +1862,7 @@ export default function MessagesPage() {
                               if (next && faqs.length === 0 && activeSession) {
                                 try {
                                   const res = await fetch(
-                                    `/api/chatbot/faqs/${activeSession.sellerId}`
+                                    `/api/chatbot/faqs/${activeSession.sellerId}`,
                                   );
                                   if (!res.ok)
                                     throw new Error("Failed to fetch FAQs");
@@ -1880,7 +1895,7 @@ export default function MessagesPage() {
                                     "buyer",
                                     true,
                                     "text",
-                                    null
+                                    null,
                                   );
                                   await sendMessage(
                                     activeSession.id,
@@ -1888,7 +1903,7 @@ export default function MessagesPage() {
                                     "chatbot",
                                     true,
                                     "text",
-                                    null
+                                    null,
                                   );
                                 }}
                               >

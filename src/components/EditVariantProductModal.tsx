@@ -88,7 +88,7 @@ export default function EditVariantProductModal({
     setFormData({
       ...formData,
       variants: formData.variants.map((v: any) =>
-        v.id === id ? { ...v, [key]: value } : v
+        v.id === id ? { ...v, [key]: value } : v,
       ),
     });
   };
@@ -143,7 +143,7 @@ export default function EditVariantProductModal({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           className="
-      sm:max-w-[700px] w-[90%] max-h-[90vh] overflow-y-auto
+      sm:max-w-[800px] w-[90%] max-h-[90vh] overflow-y-auto
       fixed !left-1/2 !top-1/2 !-translate-x-1/2 !-translate-y-1/2
       p-10 sm:p-8 md:p-10 rounded-xl shadow-lg bg-background
       border border-border
@@ -226,21 +226,47 @@ export default function EditVariantProductModal({
           {/*  Variant Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="flex items-center justify-between mb-4">
-              <TabsList className="overflow-x-auto flex-1">
+              <TabsList
+                className="
+    flex flex-wrap
+    gap-2
+    w-full
+    h-auto
+    bg-transparent
+    p-0
+  "
+              >
                 {formData.variants.map((v: any) => (
                   <TabsTrigger
                     key={v.id}
                     value={v.id}
-                    className="flex items-center gap-2 mb-1"
+                    className="flex items-center gap-2 min-w-[180px] px-3 py-2.5 h-auto"
                   >
-                    {v.name || "Untitled"}
-                    <X
-                      onClick={(e) => {
+                    <span className="truncate flex-1" title={v.name}>
+                      {v.name || "Untitled"}
+                    </span>
+
+                    {/* ✅ NOT a button anymore */}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      className="
+      pointer-events-auto
+      z-10
+      rounded-full
+      p-0.5
+      hover:bg-red-100
+      flex-shrink-0
+      cursor-pointer
+    "
+                      onPointerDown={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
                         removeVariant(v.id);
                       }}
-                      className="h-3 w-3 text-gray-400 hover:text-red-500 cursor-pointer"
-                    />
+                    >
+                      <X className="h-3 w-3 text-gray-500 hover:text-red-500" />
+                    </span>
                   </TabsTrigger>
                 ))}
               </TabsList>
@@ -290,7 +316,7 @@ export default function EditVariantProductModal({
                           updateVariant(
                             variant.id,
                             "price",
-                            parseFloat(e.target.value)
+                            parseFloat(e.target.value),
                           )
                         }
                       />
@@ -304,7 +330,7 @@ export default function EditVariantProductModal({
                           updateVariant(
                             variant.id,
                             "stock",
-                            parseInt(e.target.value)
+                            parseInt(e.target.value),
                           )
                         }
                       />
@@ -362,7 +388,7 @@ export default function EditVariantProductModal({
                               onClick={() => removeAttribute(variant.id, k)}
                             />
                           </div>
-                        )
+                        ),
                       )}
                       <Button
                         size="sm"
